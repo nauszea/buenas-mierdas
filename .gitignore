@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.DS_Store
+backend/pocketbase.exe
+backend/pocketbase
+backend/pb_data/
+backend/pb_migrations/
