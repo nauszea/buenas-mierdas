@@ -1,0 +1,30 @@
+[
+  {
+    "name": "afectos",
+    "type": "base",
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": "",
+    "deleteRule": null,
+    "schema": [
+      { "name": "nombre", "type": "text", "required": true },
+      { "name": "ubicacion", "type": "text", "required": false },
+      { "name": "historia", "type": "text", "required": false },
+      { "name": "tags", "type": "json", "required": false },
+      { "name": "posicion", "type": "json", "required": false },
+      { "name": "color", "type": "text", "required": false },
+      { "name": "forma", "type": "text", "required": false },
+      { "name": "reapropiaciones", "type": "number", "required": false },
+      {
+        "name": "modelo",
+        "type": "file",
+        "required": false,
+        "options": {
+          "maxSelect": 1,
+          "maxSize": 52428800
+        }
+      }
+    ]
+  }
+]

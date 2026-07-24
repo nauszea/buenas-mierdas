@@ -1,0 +1,12 @@
+Pon aquí tus GIFs animados retro (de GifCities: https://gifcities.org).
+
+Luego regístralos en la lista GIFS de:
+  src/scene/ConstelacionGifs.jsx
+
+Ejemplo:
+  const GIFS = ['/gifs/estrella1.gif', '/gifs/luna.gif']
+
+Consejos:
+- Usa GIFs pequeños (menos de 100 KB idealmente) para que el altar cargue rápido.
+- Repite pocos GIFs muchas veces: la app comparte la textura entre copias,
+  así que 30 estrellas con el mismo GIF cuestan casi lo mismo que 1.

@@ -1,0 +1,34 @@
+Pon aquí tus modelos 3D escaneados (.glb) para probarlos en el altar.
+
+Cómo escanear (gratis, con el celular):
+  1. Descarga Polycam (iPhone/Android). Alternativas: Luma AI, Kiri Engine.
+  2. Escanea tu objeto dándole la vuelta despacio con la cámara.
+  3. Exporta como GLB. Si te deja elegir calidad, elige la MÁS BAJA
+     (lo tosco es parte de la estética, y carga más rápido).
+  4. Pasa el archivo a esta carpeta, ej: public/modelos/taza.glb
+
+Luego regístralo en  src/data/afectos.js  agregando un objeto a la lista
+(hay un ejemplo comentado al final del archivo): pon glb: '/modelos/taza.glb'
+y las coordenadas posicion: [x, y, z] donde quieras que flote.
+
+Consejo de peso: si tu .glb pesa más de ~5 MB, la carga se sentirá lenta.
+En una fase futura la compresión será automática al subir; por ahora exporta en baja.
+
+--- ¿De dónde descargar modelos de prueba de internet? ---
+
+Recomendado: https://poly.pizza — el archivo del difunto Google Poly.
+Miles de modelos low-poly gratis (CC0/CC-BY), justo la estética del altar.
+Filtra por "glb" y descarga directo.
+
+Especificaciones ideales para cualquier modelo que bajes:
+  · Formato: .glb (binario, un solo archivo)
+  · Peso: menos de 2 MB ideal, 5 MB máximo
+  · Polígonos: menos de 20,000 triángulos
+  · Texturas: 512px o menos (1024px máximo)
+
+Si bajas uno pesado, se comprime con un comando (necesita la ventana negra):
+  npx @gltf-transform/cli resize pesado.glb liviano.glb --width 512 --height 512
+(así se hizo palta.glb, que vino de 8.3 MB y quedó en 0.6 MB)
+
+El campo `escala` en afectos.js sirve para modelos que vienen en tamaño
+real (la palta mide 6 cm, por eso lleva escala: 34).
