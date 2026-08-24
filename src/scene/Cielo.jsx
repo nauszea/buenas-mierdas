@@ -3,14 +3,19 @@ import { useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 
 // Paleta única del proyecto: cambiar aquí cambia todo el ambiente.
+//
+// NO es un cielo de fantasía. Es el mediodía calcinante de Tacora: la luz que
+// te quema mientras buscas entre la cachina, tan fuerte que los fotorreceptores
+// se saturan y el cerebro devuelve post-imágenes en morados y azules eléctricos.
+// El cielo del archivo es la memoria corporal de haber ido a rescatar los objetos.
 export const COLORES = {
-  cenit: '#b8a9f0',      // lila suave arriba
-  horizonte: '#ffd6e8',  // rosa pastel en el horizonte (¡mismo color que el fog!)
-  nadir: '#cdefff',      // celeste debajo
-  vapor1: '#ffe9f6',     // vapor rosado claro
-  vapor2: '#dcd0ff',     // vapor lila
-  luzAmbiente: '#ffeef8',
-  luzSol: '#fff3c9',
+  cenit: '#4b3a9e',      // violeta profundo: la post-imagen quemada en la retina
+  horizonte: '#ff9a4d',  // naranja quemado, sobreexpuesto (¡mismo color que el fog!)
+  nadir: '#c49a63',      // ocre polvoriento: tierra, cemento, calor que sube del suelo
+  vapor1: '#ffd08a',     // calima caliente
+  vapor2: '#7b5fd6',     // el morado de la insolación
+  luzAmbiente: '#ffd9ac',
+  luzSol: '#fff4d6',
 }
 
 // Cielo infinito y GASEOSO: esfera gigante vista desde adentro.
@@ -76,36 +81,44 @@ const fragmentShader = /* glsl */ `
     color = mix(color, uVapor1, smoothstep(0.42, 0.78, gas1) * 0.45);
     color = mix(color, uVapor2, smoothstep(0.48, 0.82, gas2) * 0.30);
 
-    // 3) grano fino: rompe el degradé "perfecto", textura de ruido
+    // 3) SOBREEXPOSICIÓN: cerca del horizonte la luz revienta el sensor y el
+    //    color se lava hacia el blanco. Es el sol de mediodía que no te deja ver.
+    float quemado = (1.0 - smoothstep(0.0, 0.30, abs(h))) * 0.62;
+    color = mix(color, vec3(1.0, 0.97, 0.88), quemado);
+
+    // 4) grano fino: rompe el degradé "perfecto", textura de ruido
     color += (hash(vDir * 380.0) - 0.5) * 0.045;
 
-    // 4) glitter: escarcha que titila, en DOS escalas (chispas finas y gordas)
+    // 5) DESTELLOS: mismos brillitos de siempre, pero ya no son escarcha de hada
+    //    — son el sol pegando en vidrio, metal y plástico de la cachina. Más
+    //    duros, más blancos, y titilando más rápido (encandilan, no acarician).
     vec3 celda = floor(vDir * 300.0);
-    float esChispa = step(0.9962, hash(celda));
-    float titilar = 0.5 + 0.5 * sin(uTiempo * 2.5 + hash(celda + 5.0) * 6.2831);
-    color += esChispa * titilar * 0.34;
+    float esChispa = step(0.9972, hash(celda));
+    float titilar = 0.5 + 0.5 * sin(uTiempo * 3.4 + hash(celda + 5.0) * 6.2831);
+    color += esChispa * titilar * 0.42;
 
     vec3 celdaGorda = floor(vDir * 90.0);
-    float esChispaGorda = step(0.9975, hash(celdaGorda + 3.3));
-    float titilar2 = 0.5 + 0.5 * sin(uTiempo * 1.4 + hash(celdaGorda + 8.0) * 6.2831);
-    color += esChispaGorda * titilar2 * 0.28;
+    float esChispaGorda = step(0.9983, hash(celdaGorda + 3.3));
+    float titilar2 = 0.5 + 0.5 * sin(uTiempo * 2.0 + hash(celdaGorda + 8.0) * 6.2831);
+    color += esChispaGorda * titilar2 * 0.38;
 
     gl_FragColor = vec4(color, 1.0);
   }
 `
 
 // ---------------------------------------------------------------------------
-// EL MUNDO CAMBIA MIENTRAS LO EXPLORAS: hay tres "climas" pastel repartidos
-// por el espacio. Cerca del origen reina el alba rosa; volando hacia un lado
-// el cielo se vuelve celeste-menta; hacia el otro, durazno-lavanda. La
-// transición es un fundido lento según la posición de la cámara, y la
-// niebla siempre acompaña el color del horizonte (por eso nunca se nota
-// dónde termina el mundo).
+// EL MUNDO CAMBIA MIENTRAS LO EXPLORAS, y lo que cambia es CUÁNTO CALOR HAS
+// AGUANTADO. No son tres paisajes distintos: son tres grados de exposición.
+// Cerca del origen es mediodía calcinante. Volando hacia un lado cae el sunset
+// de verano, naranja sucio. Hacia el otro llega el golpe de calor: la vista
+// falla y todo vira a morados y azules eléctricos. Mientras más lejos vas del
+// centro, más insolado estás. La niebla siempre acompaña al horizonte, así que
+// nunca se nota dónde termina el mundo — solo que el aire está más caliente.
 // ---------------------------------------------------------------------------
 const CLIMAS = [
-  { cenit: '#b8a9f0', horizonte: '#ffd6e8', nadir: '#cdefff' }, // origen: alba rosa
-  { cenit: '#93cfe8', horizonte: '#d6f4ff', nadir: '#e2ffee' }, // lejos, lado A: celeste-menta
-  { cenit: '#d9a9c9', horizonte: '#ffe4cf', nadir: '#f2d9ff' }, // lejos, lado B: durazno-lavanda
+  { cenit: '#4b3a9e', horizonte: '#ff9a4d', nadir: '#c49a63' }, // origen: mediodía calcinante
+  { cenit: '#8e3f7a', horizonte: '#ff6b35', nadir: '#a8683f' }, // lado A: sunset de verano, naranja quemado
+  { cenit: '#2d2bb5', horizonte: '#b06be0', nadir: '#5f4bc4' }, // lado B: golpe de calor, la vista falla
 ]
 
 export default function Cielo() {

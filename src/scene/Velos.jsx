@@ -67,7 +67,9 @@ const fragmentShader = /* glsl */ `
   }
 `
 
-const PALETA_VAPOR = ['#ffd6e8', '#e6d9ff', '#d3f2ff', '#fff3d9', '#ffe0f4']
+// Calima: el aire caliente que tiembla sobre el asfalto, mezclado con el
+// morado de la post-imagen. Nada de pasteles — esto es polvo, sol y vista fallando.
+const PALETA_VAPOR = ['#ffb066', '#8b6bd9', '#ffd9a0', '#c9704a', '#6f5ac9']
 
 function velosAleatorios(cantidad, semillaBase = 3) {
   let s = semillaBase
