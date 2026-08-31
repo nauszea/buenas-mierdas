@@ -23,6 +23,9 @@ pb.autoCancellation(false)
 let modoBackend = null // null = aún no sabemos; true/false después del primer intento
 const glbDeLaSesion = new Map() // id → URL temporal del .glb (solo modo ensayo)
 
+let totalAfectos = null // cuántos afectos existen — se llena al cargar, crece al subir uno nuevo
+const ANGULO_AUREO = 2.399963 // ~137.5°, el mismo ángulo con el que crecen las semillas de un girasol
+
 const PASTELES = ['#ffb7d5', '#e2d7ff', '#c9f6ff', '#ffe9a8', '#b8e6c9', '#ffd6e8']
 const FORMAS = ['icosaedro', 'caja', 'esfera', 'toro', 'nudo', 'dodecaedro']
 
@@ -42,10 +45,15 @@ export function estaEnModoAltar() {
   return modoBackend === true
 }
 
-// coordenada nueva en el domo del altar (bien espaciado: hay que explorar)
+// coordenada nueva en el domo del altar — el archivo crece en espiral: cada
+// afecto nuevo se ubica un poco más lejos que el anterior (radio ∝ raíz de
+// cuántos ya existen), así que el espacio se expande solo con el tiempo, sin
+// tope fijo. El ángulo dorado evita que la espiral se "pise" a sí misma —
+// es la misma matemática con la que crecen las semillas de un girasol.
 function posicionNueva() {
-  const angulo = Math.random() * Math.PI * 2
-  const radio = 18 + Math.random() * 42
+  const indice = totalAfectos ?? 0
+  const angulo = indice * ANGULO_AUREO
+  const radio = 18 + Math.sqrt(indice) * 9
   return [
     Math.round(Math.cos(angulo) * radio * 10) / 10,
     Math.round((1 + Math.random() * 26) * 10) / 10,
@@ -97,10 +105,14 @@ export async function cargarAfectos() {
   const semillas = AFECTOS.map((a) => ({ ...a, reapropiaciones: 0 }))
   if (await hayBackend()) {
     const registros = await pb.collection('afectos').getFullList({ sort: 'created' })
-    return [...semillas, ...registros.map(desdeRegistro)]
+    const todos = [...semillas, ...registros.map(desdeRegistro)]
+    totalAfectos = todos.length
+    return todos
   }
   const locales = leerLocales().map((a) => ({ ...a, glb: glbDeLaSesion.get(a.id) }))
-  return [...semillas, ...locales]
+  const todos = [...semillas, ...locales]
+  totalAfectos = todos.length
+  return todos
 }
 
 export async function subirAfecto({ nombre, ubicacion, historia, tags, archivo }) {
@@ -114,6 +126,7 @@ export async function subirAfecto({ nombre, ubicacion, historia, tags, archivo }
     forma: alAzar(FORMAS),
     reapropiaciones: 0,
   }
+  totalAfectos = (totalAfectos ?? 0) + 1 // el siguiente afecto ya empieza un poco más lejos
 
   if (await hayBackend()) {
     const fd = new FormData()
