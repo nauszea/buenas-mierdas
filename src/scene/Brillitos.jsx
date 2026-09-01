@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 
 // ---------------------------------------------------------------------------
@@ -12,6 +12,7 @@ import { useFrame } from '@react-three/fiber'
 const vertexShader = /* glsl */ `
   uniform float uTiempo;
   uniform vec3 uAlcance;
+  uniform float uVelocidadCamara; // qué tan rápido te estás moviendo AHORA
   attribute float aTam;
   attribute float aFase;
   attribute float aVel;
@@ -21,35 +22,38 @@ const vertexShader = /* glsl */ `
   varying float vVel;
   varying vec3 vColor;
   varying float vDestello;
+  varying float vVivo;
   void main() {
     vFase = aFase;
     vVel = aVel;
     vColor = aColor;
 
-    // DERIVA: cada partícula viaja lentamente por el espacio en su propia
-    // dirección, como polvo en el aire o nubes cruzando el cielo. Al llegar
-    // al borde del campo reaparece por el lado opuesto (mod), así el viaje
-    // nunca termina y nunca se ve un "borde" del mundo.
-    vec3 p = position + aFacet * uTiempo * 0.4;
+    // DERIVA: cada partícula viaja por el espacio en su propia dirección,
+    // como polvo en el aire. Ahora sí a una velocidad que se nota en
+    // segundos, no en minutos. Al llegar al borde reaparece del otro lado.
+    vec3 p = position + aFacet * uTiempo * (1.8 + aVel * 1.2);
     p.x = mod(p.x + uAlcance.x * 0.5, uAlcance.x) - uAlcance.x * 0.5;
     p.z = mod(p.z + uAlcance.z * 0.5, uAlcance.z) - uAlcance.z * 0.5;
     p.y = mod(p.y, uAlcance.y);
-    // encima de la deriva, un vaivén suave — el mismo que usan los GIFs
-    p.y += sin(uTiempo * aVel * 0.3 + aFase) * 0.5;
+    // encima de la deriva, un vaivén más marcado
+    p.y += sin(uTiempo * aVel * 0.5 + aFase) * 0.8;
 
     // EL ÁNGULO REAL: qué tan alineada está la cara de este brillo con tu
-    // mirada. abs() = la cara refleja por sus dos lados, así que hay más
-    // chance de "prender". Potencia alta = destello angosto y notorio, que
-    // aparece y desaparece cuando giras la cámara. NO depende del reloj.
+    // mirada. Cambia con hacia dónde miras/te mueves, no con el reloj.
     vec3 posMundo = (modelMatrix * vec4(p, 1.0)).xyz;
     vec3 haciaCamara = normalize(cameraPosition - posMundo);
-    vDestello = pow(abs(dot(haciaCamara, aFacet)), 5.0);
+    vDestello = pow(abs(dot(haciaCamara, aFacet)), 4.0);
+
+    // VIVACIDAD: cuando tú navegas, el enjambre entero "despierta" —
+    // se nota interactivo, no decorativo. Se suaviza en JS, así que acá
+    // solo se usa directo.
+    vVivo = uVelocidadCamara;
 
     vec4 mv = modelViewMatrix * vec4(p, 1.0);
-    // más lejos = más chico (perspectiva). Al destellar crece un poco, como
-    // el glitter real cuando le pega la luz de frente.
-    float tam = aTam * (1.0 + vDestello * 0.8);
-    gl_PointSize = clamp(tam * (260.0 / -mv.z), 1.0, 15.0);
+    // más lejos = más chico (perspectiva). Al destellar, o al moverte rápido,
+    // crece un poco — como el glitter real cuando le pega la luz de frente.
+    float tam = aTam * (1.0 + vDestello * 0.8 + vVivo * 0.5);
+    gl_PointSize = clamp(tam * (260.0 / -mv.z), 1.0, 16.0);
     gl_Position = projectionMatrix * mv;
   }
 `
@@ -60,17 +64,21 @@ const fragmentShader = /* glsl */ `
   varying float vVel;
   varying vec3 vColor;
   varying float vDestello;
+  varying float vVivo;
   void main() {
-    // titileo propio, suave — le da vida, pero NO es quien decide si se ve
-    float titilar = 0.55 + 0.45 * sin(uTiempo * vVel * 1.6 + vFase);
+    // titileo FILOSO — picos cortos y marcados, no una respiración pareja
+    float onda = 0.5 + 0.5 * sin(uTiempo * vVel * 3.2 + vFase);
+    float titilar = 0.2 + 0.8 * pow(onda, 3.0);
     // forma de rombo (destello clásico), con borde suave
     vec2 p = gl_PointCoord - 0.5;
     float rombo = abs(p.x) + abs(p.y);
-    // siempre visible como puntito de color (0.3), pero al alinearse el
-    // ángulo sube fuerte (hasta 1.0): ahí está el highlight que se nota
-    float alfa = smoothstep(0.5, 0.12, rombo) * titilar * (0.3 + 0.7 * vDestello);
-    // y al destellar además se aclara hacia el blanco, como un reflejo real
-    vec3 color = vColor + vDestello * 0.5;
+    // base visible (0.25) + el ángulo real (hasta +0.75) + un empujón extra
+    // mientras navegas, para que se sientan vivos al moverte, no solo al
+    // quedarte quieta mirando
+    float presencia = 0.25 + 0.75 * vDestello + vVivo * 0.5;
+    float alfa = smoothstep(0.5, 0.12, rombo) * titilar * min(presencia, 1.0);
+    // se aclaran hacia el blanco al destellar Y al moverte rápido
+    vec3 color = vColor + vDestello * 0.5 + vVivo * 0.3;
     gl_FragColor = vec4(color, alfa);
   }
 `
@@ -130,12 +138,27 @@ export default function Brillitos({ cantidad = 750, alcance = [180, 60, 180], se
       uniforms: {
         uTiempo: { value: 0 },
         uAlcance: { value: new THREE.Vector3(...alcance) },
+        uVelocidadCamara: { value: 0 },
       },
     }
   }, [cantidad, alcance, semilla])
 
-  useFrame(({ clock }) => {
+  // cuánto te estás moviendo AHORA — se mide comparando la posición de la
+  // cámara cuadro a cuadro, y se suaviza para que no tiemble
+  const posAnterior = useRef(null)
+  const velocidadSuave = useRef(0)
+
+  useFrame(({ clock, camera }, delta) => {
     uniforms.uTiempo.value = clock.elapsedTime
+
+    if (!posAnterior.current) posAnterior.current = camera.position.clone()
+    const distancia = camera.position.distanceTo(posAnterior.current)
+    const velocidadInstante = delta > 0 ? distancia / delta : 0
+    // normalizado: a partir de ~8 unidades/seg ya se considera "moviéndote rápido"
+    const objetivo = THREE.MathUtils.clamp(velocidadInstante / 8, 0, 1)
+    velocidadSuave.current = THREE.MathUtils.lerp(velocidadSuave.current, objetivo, 0.08)
+    uniforms.uVelocidadCamara.value = velocidadSuave.current
+    posAnterior.current.copy(camera.position)
   })
 
   return (
