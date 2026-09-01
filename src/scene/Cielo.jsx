@@ -4,11 +4,11 @@ import { useFrame } from '@react-three/fiber'
 
 // Paleta única del proyecto: cambiar aquí cambia todo el ambiente.
 export const COLORES = {
-  cenit: '#b8a9f0',      // lila suave arriba
-  horizonte: '#ffd6e8',  // rosa pastel en el horizonte (¡mismo color que el fog!)
-  nadir: '#cdefff',      // celeste debajo
-  vapor1: '#ffe9f6',     // vapor rosado claro
-  vapor2: '#dcd0ff',     // vapor lila
+  cenit: '#9bd7ff',      // celeste cielo
+  horizonte: '#9bd7ff',  // celeste cielo
+  nadir: '#ffcfd3',      // salmon debajo
+  vapor1: '#fffefe',     // vapor  casi blanco
+  vapor2: '#fdfbec',     // vapor crema
   luzAmbiente: '#fffef3',
   luzSol: '#f5d7a9',
 }
@@ -77,7 +77,7 @@ const fragmentShader = /* glsl */ `
     color = mix(color, uVapor2, smoothstep(0.48, 0.82, gas2) * 0.30);
 
     // 3) grano fino: rompe el degradé "perfecto", textura de ruido
-    color += (hash(vDir * 380.0) - 0.5) * 0.045;
+    color += (hash(vDir * 380.0) - 0.5) * 0.06;
 
     // 4) glitter: escarcha que titila, en DOS escalas (chispas finas y gordas)
     vec3 celda = floor(vDir * 300.0);
@@ -103,9 +103,9 @@ const fragmentShader = /* glsl */ `
 // dónde termina el mundo).
 // ---------------------------------------------------------------------------
 const CLIMAS = [
-  { cenit: '#b8a9f0', horizonte: '#ffd6e8', nadir: '#cdefff' }, // origen: alba rosa
-  { cenit: '#93cfe8', horizonte: '#d6f4ff', nadir: '#e2ffee' }, // lejos, lado A: celeste-menta
-  { cenit: '#d9a9c9', horizonte: '#ffe4cf', nadir: '#f2d9ff' }, // lejos, lado B: durazno-lavanda
+  { cenit: '#9bd7ff', horizonte: '#9bd7ff', nadir: '#ffcfd3' }, // origen
+  { cenit: '#93c6e8', horizonte: '#ffd6cd', nadir: '#fdffe0' }, // lejos, lado A: 
+  { cenit: '#93c6e8', horizonte: '#fdf8e2', nadir: '#f5d6ca' }, // lejos, lado B: 
 ]
 
 export default function Cielo() {
