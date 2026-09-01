@@ -9,8 +9,8 @@ export const COLORES = {
   nadir: '#cdefff',      // celeste debajo
   vapor1: '#ffe9f6',     // vapor rosado claro
   vapor2: '#dcd0ff',     // vapor lila
-  luzAmbiente: '#ffeef8',
-  luzSol: '#fff3c9',
+  luzAmbiente: '#fffef3',
+  luzSol: '#f5d7a9',
 }
 
 // Cielo infinito y GASEOSO: esfera gigante vista desde adentro.

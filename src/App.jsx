@@ -99,8 +99,10 @@ export default function App() {
           <Velos cantidad={10} />
           {/* glitter titilante de tamaños variados (un draw call) + polvo en deriva */}
           <Brillitos cantidad={750} />
-          <Brillitos cantidad={300} alcance={[80, 35, 80]} semilla={29} />
-          <Sparkles count={200} scale={[70, 40, 70]} size={4} speed={0.35} color="#ffd9f2" opacity={0.7} />
+          {/* esta segunda tanda vive en la misma altura donde están los afectos (1-27),
+              para que convivan con los objetos y no sean solo telón de fondo */}
+          <Brillitos cantidad={450} alcance={[110, 28, 110]} semilla={29} />
+          <Sparkles count={450} scale={[70, 40, 70]} size={2.6} speed={0.35} color="#ffd9f2" opacity={0.7} />
           <ConstelacionGifs />
 
           {afectos.map((a) => (

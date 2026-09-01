@@ -1,9 +1,10 @@
 /* ==========================================================================
    Buenas Mierdas — estilos globales
-   Estética: Macintosh System 1 (1984) en pasteles. TODO PLANO:
-   sin degradés, sin relieves 3D, sin sombras difusas. Solo línea fina de
-   tinta sobre crema, títulos centrados con rayitas, y botones que se
-   INVIERTEN al presionarlos (fondo tinta, letra crema), como en 1984.
+   Botones y listas: Macintosh System 1 (1984) en pasteles, plano, sin
+   sombras difusas, con INVERSIÓN al presionar.
+   Ventanas (VentanaRetro): System 6 — esquinas redondeadas, borde negro
+   real, fondo aqua noventero, sombra suave azul-grisácea, barra de título
+   SIN el patrón de rayitas clásico (a propósito, más limpio).
    ========================================================================== */
 
 /* Fuente pixelada: cuando tengas el archivo, ponlo en public/fonts/ y
@@ -22,10 +23,16 @@
   --celeste: #a8e8ff;
   --menta: #b0f2cd;
   --vainilla: #fff0b3;
-  --crema: #fffaf0;          /* fondo de ventanas */
-  --tinta: #5c4370;          /* la "tinta negra" del System 1, en morado juguete */
-  --tinta-suave: #a186b3;    /* texto secundario */
+  --crema: #fffaf0;          /* fondo de botones y elementos chicos */
+  /* System 6: TODO el trazo es negro — bordes, texto, iconos. Sin excepción. */
+  --tinta: #141414;
+  --tinta-suave: #6e6e6e;    /* texto secundario, gris neutro */
   --fuente-pixel: 'PixelFont', 'Courier New', monospace;
+
+  /* aqua noventero suave: el fondo de las ventanas */
+  --aqua-90s: #b9f7ef;
+  /* sombra SÓLIDA desplazada en ángulo, azul grisáceo — nunca difuminada */
+  --sombra-ventana: 3px 3px 0 #8fa8b5;
 }
 
 * {
@@ -156,30 +163,23 @@ body {
 
 .ventana-retro {
   width: min(460px, 92vw);
-  background: var(--crema);
-  border: 1.5px solid var(--tinta);
-  /* sombra sólida desplazada, sin difuminar: plano sobre plano */
-  box-shadow: 3px 3px 0 var(--tinta-suave);
+  background: var(--aqua-90s);
+  border: 2px solid var(--tinta);
+  border-radius: 14px;
+  overflow: hidden; /* para que la barra de título respete la esquina redondeada */
+  box-shadow: var(--sombra-ventana);
 }
 
-/* barra de título: las 6 rayitas horizontales del System 1, título al centro */
+/* barra de título: plana, sin patrón de rayitas — solo el título centrado */
 .ventana-titulo {
   position: relative;
   text-align: center;
   font-size: 12px;
+  font-weight: bold;
   color: var(--tinta);
-  padding: 6px 30px;
-  background: repeating-linear-gradient(
-    180deg,
-    var(--tinta) 0 1px,
-    var(--crema) 1px 4px
-  );
-  border-bottom: 1.5px solid var(--tinta);
-}
-
-.ventana-titulo > span {
-  background: var(--crema); /* el título "interrumpe" las rayitas */
-  padding: 0 10px;
+  padding: 7px 30px;
+  background: var(--aqua-90s);
+  border-bottom: 2px solid var(--tinta);
 }
 
 /* botón de cerrar: cuadradito vacío a la IZQUIERDA, como en 1984 */
@@ -192,10 +192,11 @@ body {
   height: 13px;
   font-size: 8px;
   line-height: 1;
-  color: var(--crema); /* invisible hasta hover: el cuadrado va vacío */
+  color: var(--aqua-90s); /* invisible hasta hover: el cuadrado va vacío */
   font-family: var(--fuente-pixel);
-  background: var(--crema);
+  background: var(--aqua-90s);
   border: 1.5px solid var(--tinta);
+  border-radius: 3px;
   cursor: pointer;
 }
 
