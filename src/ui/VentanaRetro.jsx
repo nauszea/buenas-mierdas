@@ -1,8 +1,13 @@
+import { useEffect } from 'react'
+import { sonidoAparecer } from '../lib/efectos.js'
+
 // VentanaRetro: ventana estilo Mac OS clásico (System 7) en pasteles.
 // Barra de título con rayitas, título centrado que las interrumpe,
 // y botón de cerrar como cuadradito a la IZQUIERDA (como en los Mac viejos).
 // Flota SOBRE el canvas 3D (no vive dentro de él).
 export default function VentanaRetro({ titulo, onCerrar, children }) {
+  useEffect(() => { sonidoAparecer() }, [])
+
   return (
     <div className="ventana-fondo">
       <div className="ventana-retro" role="dialog" aria-label={titulo}>

@@ -41,6 +41,7 @@ export const TEXTOS = {
     detalleConsagrado: '★ CONSAGRADO ★ afecto de afectos',
     detalleReapropiar: '✥ Reapropiar',
     detalleVolar: '➤ Volar hacia él',
+    etiquetaVolar: 'clic para volar hacia él',
 
     subirTitulo: 'subir_un_afecto',
     subirDrop: '↓ arrastra aquí tu escaneo .glb\n(o haz clic para buscarlo)',
@@ -112,6 +113,7 @@ export const TEXTOS = {
     detalleConsagrado: '★ CONSECRATED ★ affect of affects',
     detalleReapropiar: '✥ Reappropriate',
     detalleVolar: '➤ Fly to it',
+    etiquetaVolar: 'click to fly to it',
 
     subirTitulo: 'upload_an_affect',
     subirDrop: '↓ drop your .glb scan here\n(or click to browse)',
@@ -183,6 +185,7 @@ export const TEXTOS = {
     detalleConsagrado: '★ GEWEIHT ★ Affekt der Affekte',
     detalleReapropiar: '✥ Wiederaneignen',
     detalleVolar: '➤ Hinfliegen',
+    etiquetaVolar: 'klicken zum Hinfliegen',
 
     subirTitulo: 'affekt_hochladen',
     subirDrop: '↓ zieh deinen .glb-Scan hierher\n(oder klicke zum Auswählen)',

@@ -94,7 +94,10 @@ export const AFECTOS = [
   },
   // ejemplo REAL con .glb: la palta CC0 de los samples oficiales de glTF,
   // comprimida de 8.3 MB a 0.6 MB con gltf-transform (así se verán los
-  // escaneos). `escala` agranda modelos que vienen en tamaño real.
+  // escaneos). `escala` ahora es relativa al tamaño YA normalizado (2.2
+  // unidades) que hace Afecto.jsx — 1 = tamaño estándar. Antes decía 34,
+  // de cuando el modelo no se normalizaba solo; con la normalización nueva
+  // eso la haría gigante, así que queda en 1.
   {
     id: 'a9',
     nombre: 'palta de muestra',
@@ -103,8 +106,23 @@ export const AFECTOS = [
     tags: ['prueba', 'glb', 'fruta'],
     posicion: [-39, 8, 31],
     glb: '/modelos/palta.glb',
-    escala: 34,
+    escala: 1,
     forma: 'esfera',
     color: '#b8e6c9',
+  },
+  // el tamagotchi de prueba — igual que la palta: vive fijo acá para
+  // probar la consagración con un .glb real, sin pasar por el formulario
+  // (que en "modo ensayo", sin Pocketbase, no sobrevive a un refresh).
+  {
+    id: 'a10',
+    nombre: 'tamagotchi',
+    historia: 'De prueba, para ver cómo se comporta un .glb real camino a consagrarse.',
+    ubicacion: 'descargado de internet, no escaneado',
+    tags: ['prueba', 'glb', 'juguete'],
+    posicion: [20, 14, -22],
+    glb: '/modelos/tamagotchi.glb',
+    escala: 1,
+    forma: 'esfera',
+    color: '#ffe9a8',
   },
 ]

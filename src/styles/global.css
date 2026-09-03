@@ -29,9 +29,11 @@
   --tinta-suave: #6e6e6e;    /* texto secundario, gris neutro */
   --fuente-pixel: 'PixelFont', 'Courier New', monospace;
 
-  /* un solo valor para el tiempo del blur Y el ruido de la carga —
-     cámbialo aquí una vez y los dos quedan sincronizados */
-  --duracion-atmosfera: 4s;
+  /* dos duraciones distintas, a propósito: la primera vez que se despeja
+     el cielo (saliendo de la carga) puede ser lenta y ceremoniosa; abrir
+     o cerrar cualquier ventana después de eso debe sentirse rápido */
+  --duracion-carga: 4s;    /* el despeje inicial + el ruido de la carga */
+  --duracion-modal: 0.9s;  /* buscador, detalle de afecto, manifiesto reabierto, etc. */
 }
 
 * {
@@ -46,7 +48,14 @@ body,
 .app {
   width: 100%;
   height: 100%;
-  overflow: hidden;
+  /* "clip" y no "hidden": .app nunca debería poder scrollear — es el
+     cascarón fijo de toda la app — pero "hidden" técnicamente sigue
+     permitiendo que un foco de teclado o un scrollIntoView interno lo
+     empuje con scrollTop, y ese empujón se queda pegado para siempre
+     (no hay barra de scroll para que alguien lo note ni lo corrija).
+     "clip" desactiva el scroll del todo, de raíz, sin importar qué
+     dispare el intento de scrollear. */
+  overflow: clip;
 }
 
 body {
@@ -68,8 +77,10 @@ body {
   /* el desenfoque vive AQUÍ, no en pantalla-carga ni en ventana-fondo —
      este elemento nunca se desmonta, así que la transición sí tiene
      tiempo de animarse en vez de saltar de golpe. El VALOR llega directo
-     por estilo en línea desde App.jsx (no por variable CSS — ver ahí por qué). */
-  transition: backdrop-filter var(--duracion-atmosfera) ease;
+     por estilo en línea desde App.jsx (no por variable CSS — ver ahí por qué).
+     La DURACIÓN también llega por estilo en línea desde App.jsx, porque
+     cambia según el momento: lenta para el despeje inicial, rápida para
+     cualquier ventana después (--duracion-carga vs --duracion-modal). */
 }
 
 /* grano sobre el blur de la carga — SVG generado por código, sin archivo
@@ -82,7 +93,7 @@ body {
   opacity: 0;
   mix-blend-mode: overlay;
   pointer-events: none;
-  transition: opacity var(--duracion-atmosfera) ease;
+  transition: opacity var(--duracion-carga) ease;
 }
 
 .ruido-atmosfera.visible {
@@ -186,6 +197,16 @@ body {
   border: 1.5px solid var(--tinta);
   /* sombra sólida desplazada, sin difuminar: plano sobre plano, como 1984 */
   box-shadow: 3px 3px 0 var(--tinta-suave);
+  /* la ventana no aparece con un fade suave: entra de un salto, en pocos
+     pasos discretos (steps()) en vez de una curva continua — el "snap" de
+     un menú N64 materializándose, más cuadriculado que elegante */
+  animation: ventana-aparecer 0.28s steps(5, jump-end);
+}
+
+@keyframes ventana-aparecer {
+  0% { transform: scale(0.75); opacity: 0; }
+  55% { transform: scale(1.04); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 /* barra de título: las rayitas horizontales clásicas del System 1, título al centro */
@@ -214,9 +235,9 @@ body {
   left: 8px;
   top: 50%;
   transform: translateY(-50%);
-  width: 13px;
-  height: 13px;
-  font-size: 8px;
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
   line-height: 1;
   color: var(--crema); /* invisible hasta hover: el cuadrado va vacío */
   font-family: var(--fuente-pixel);
@@ -423,6 +444,147 @@ body {
   color: var(--tinta-suave);
   text-align: center;
   padding: 12px 0;
+}
+
+/* ---------- etiqueta de afecto lejano + ficha anclada (Html dentro del Canvas) ---------- */
+.etiqueta-lejos {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--tinta);
+  padding: 6px 10px;
+  font-family: var(--fuente-pixel);
+  color: var(--tinta);
+  text-align: center;
+  white-space: nowrap;
+  /* NUNCA clicable: se dibuja justo encima del objeto que nombra, así que
+     con pointer-events:auto se comía el clic destinado al objeto — hovereabas
+     un afecto lejano, aparecía su etiqueta, y al clicarlo el clic moría en
+     la etiqueta y no volabas a ningún lado. Es un rótulo, no un control. */
+  pointer-events: none;
+  /* centrada arriba del punto 3D donde vive el afecto */
+  transform: translate(-50%, -140%);
+}
+
+.etiqueta-nombre {
+  margin: 0;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* el prompt de "volar hacia él" — posición y titileo compartidos por sus
+   dos variantes (ver abajo); un poco más arriba que .boton-subir (24px) y
+   más grande que el texto normal, para que no "se pierda" contra el cielo.
+   El titileo es LENTO y SUAVE, que respira (opacity con ease) — no el
+   parpadeo duro de .parpadeo/.ayuda-nav, que hace un corte seco con
+   steps(). Para comparar las dos variantes: cambiá la clase que se usa en
+   App.jsx de "estilo-texto" a "estilo-boton" (o viceversa). */
+.prompt-volar {
+  position: absolute;
+  bottom: 88px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--fuente-pixel);
+  white-space: nowrap;
+  animation: respirar 2.2s ease-in-out infinite;
+  /* es un AVISO, no un botón: no se clica (lo que se clica es el objeto),
+     así que ni cursor de mano ni pointer-events — que los clics le pasen
+     de largo al altar que tiene debajo */
+  pointer-events: none;
+}
+
+/* variante A — estilo "press start" de arcade/N64: sin caja, solo la
+   palabra en blanco con un borde negro duro (varias sombras SIN desenfoque
+   en vez de una sola sombra difuminada — se ve a "borde de historieta",
+   no a "sombra caída") */
+.prompt-volar.estilo-texto {
+  font-size: 16px;
+  font-weight: bold;
+  color: #ffffff;
+  background: none;
+  border: none;
+  padding: 0;
+  text-shadow:
+    -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000,
+    -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000,
+    0 -1.5px 0 #000, 0 1.5px 0 #000, -1.5px 0 0 #000, 1.5px 0 0 #000;
+}
+
+/* variante B — el mismo botón redondeado de siempre (.boton-retro), solo
+   un poco más grande para que se note desde lejos */
+.prompt-volar.estilo-boton {
+  font-size: 14px;
+  color: var(--tinta);
+  background: var(--crema);
+  border: 1.5px solid var(--tinta);
+  border-radius: 10px;
+  padding: 8px 20px;
+}
+
+.prompt-volar.estilo-boton:hover {
+  background: var(--lila);
+}
+
+@keyframes respirar {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* la ficha del afecto seleccionado — sigue anclada en 3D (no es un panel
+   fijo de pantalla), pero con más distancia al objeto que antes: así el
+   objeto queda con "aire" para apreciarse entero, no tapado ni pegado a
+   la ventana — estilo "selección de personaje" (Mario Kart y similares),
+   el objeto a un lado, sus datos al otro. La cámara ahora sigue sola al
+   objeto seleccionado mientras flota (ver ControlesCamara.jsx), así que
+   el temblor de la ventana por su propio bamboleo queda mucho más
+   controlado que antes de esa ancla. Nunca desenfoca el fondo (ver
+   App.jsx: `seleccionado` no cuenta para el blur global). */
+.ventana-anclada {
+  pointer-events: auto;
+  width: 280px;
+  transform: translate(56px, -50%);
+}
+
+.indice-alfabetico {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin: 8px 0;
+}
+
+.indice-letra {
+  font-family: var(--fuente-pixel);
+  font-size: 11px;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--tinta);
+  background: var(--crema);
+  color: var(--tinta);
+  cursor: pointer;
+}
+
+.indice-letra:hover:not(:disabled) {
+  background: var(--celeste);
+}
+
+.indice-letra:disabled {
+  opacity: 0.3;
+  cursor: default;
+  border-color: var(--tinta-suave);
+  color: var(--tinta-suave);
+}
+
+.categoria-titulo {
+  font-family: var(--fuente-pixel);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--tinta-suave);
+  text-transform: uppercase;
+  margin: 10px 0 3px;
+  padding-bottom: 2px;
+  border-bottom: 1px dashed var(--tinta-suave);
+}
+
+.categoria-titulo:first-child {
+  margin-top: 0;
 }
 
 /* ---------- vista de detalle ---------- */
