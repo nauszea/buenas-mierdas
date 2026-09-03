@@ -25,6 +25,9 @@ export default function App() {
   // además: 'subir', 'instrucciones', 'confirmacion'
   const [pantalla, setPantalla] = useState('carga')
   const [idioma, setIdioma] = useState('es')
+  // carga en dos tiempos: el cielo (atmósfera) arranca de inmediato; los
+  // afectos y GIFs (contenido) esperan a que se elija idioma
+  const [listo, setListo] = useState(false)
   const [afectos, setAfectos] = useState([])
   const [nuevoAfecto, setNuevoAfecto] = useState(null)
   const [buscadorAbierto, setBuscadorAbierto] = useState(false)
@@ -36,15 +39,17 @@ export default function App() {
 
   const t = TEXTOS[idioma]
 
-  // al abrir: cargar los afectos (de Pocketbase si está encendido, si no del navegador)
+  // recién cuando se eligió idioma: cargar los afectos (de Pocketbase si
+  // está encendido, si no del navegador). Antes de eso, solo existe el cielo.
   useEffect(() => {
+    if (!listo) return
     cargarAfectos().then((lista) => {
       setAfectos(lista)
       const cuentas = {}
       lista.forEach((a) => { cuentas[a.id] = a.reapropiaciones || 0 })
       setReapropiaciones(cuentas)
     })
-  }, [])
+  }, [listo])
 
   // atajos: Ctrl+F buscador · Escape cierra ventanas
   useEffect(() => {
@@ -103,9 +108,12 @@ export default function App() {
               para que convivan con los objetos y no sean solo telón de fondo */}
           <Brillitos cantidad={450} alcance={[110, 28, 110]} semilla={29} />
           <Sparkles count={450} scale={[70, 40, 70]} size={2.6} speed={0.35} color="#ffd9f2" opacity={0.7} />
-          <ConstelacionGifs />
 
-          {afectos.map((a) => (
+          {/* el contenido (GIFs y afectos) espera a que se elija idioma —
+              durante la carga solo existe la atmósfera del cielo */}
+          {listo && <ConstelacionGifs />}
+
+          {listo && afectos.map((a) => (
             <Afecto
               key={a.id}
               afecto={a}
@@ -119,12 +127,22 @@ export default function App() {
         </Canvas>
 
         {/* ---------- LA UI 2D (HTML plano flotando encima) ---------- */}
-        <div className="ui-overlay">
+        {/* Un solo desenfoque, en .ui-overlay (nunca se desmonta) — sigue
+            borroso durante toda la carga y la elección de idioma, y se
+            despeja recién al entrar al manifiesto. El valor va DIRECTO en
+            backdropFilter, no por una variable CSS — los navegadores no
+            siempre animan bien una transición cuando el valor llega a
+            través de var(), aunque la variable sí cambie. */}
+        <div className="ui-overlay" style={{ backdropFilter: `blur(${pantalla === 'carga' ? 6 : 0}px)` }}>
+          {/* grano sobre el blur — mismo tiempo que el desenfoque (--duracion-atmosfera) */}
+          <div className={'ruido-atmosfera' + (pantalla === 'carga' ? ' visible' : '')} />
+
           {pantalla === 'carga' && (
             <PantallaCarga
               onElegirIdioma={(codigo) => {
                 setIdioma(codigo)
                 setPantalla('manifiesto')
+                setListo(true) // recién ahora se cargan afectos y GIFs
               }}
             />
           )}
@@ -154,7 +172,9 @@ export default function App() {
                 {t.botonSubir}
               </button>
 
-              <AyudaNavegacion />
+              {/* solo en el altar libre — no mientras el manifiesto o el
+                  tutorial siguen abiertos tapando la vista */}
+              {pantalla === null && <AyudaNavegacion />}
             </>
           )}
 

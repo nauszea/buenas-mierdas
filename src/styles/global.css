@@ -1,10 +1,9 @@
 /* ==========================================================================
    Buenas Mierdas — estilos globales
-   Botones y listas: Macintosh System 1 (1984) en pasteles, plano, sin
-   sombras difusas, con INVERSIÓN al presionar.
-   Ventanas (VentanaRetro): System 6 — esquinas redondeadas, borde negro
-   real, fondo aqua noventero, sombra suave azul-grisácea, barra de título
-   SIN el patrón de rayitas clásico (a propósito, más limpio).
+   Macintosh System 1 (1984), blanco y negro puro. TODO PLANO: sin degradés,
+   sin relieves 3D, sin sombras difusas. Solo línea fina de tinta sobre
+   crema, títulos centrados con rayitas, y botones que se INVIERTEN al
+   presionarlos (fondo tinta, letra crema).
    ========================================================================== */
 
 /* Fuente pixelada: cuando tengas el archivo, ponlo en public/fonts/ y
@@ -16,9 +15,10 @@
 */
 
 :root {
-  /* paleta 90s: los pasteles de los juguetes — más saturados y golosos
+  /* paleta 90s: los pasteles de los juguetes — 
      (bubblegum, menta, lavanda de My Little Pony, mantequilla, aqua) */
   --rosa: #ffb3d9;
+  --blanco: #ffffff;
   --lila: #d4bdff;
   --celeste: #a8e8ff;
   --menta: #b0f2cd;
@@ -29,10 +29,9 @@
   --tinta-suave: #6e6e6e;    /* texto secundario, gris neutro */
   --fuente-pixel: 'PixelFont', 'Courier New', monospace;
 
-  /* aqua noventero suave: el fondo de las ventanas */
-  --aqua-90s: #b9f7ef;
-  /* sombra SÓLIDA desplazada en ángulo, azul grisáceo — nunca difuminada */
-  --sombra-ventana: 3px 3px 0 #8fa8b5;
+  /* un solo valor para el tiempo del blur Y el ruido de la carga —
+     cámbialo aquí una vez y los dos quedan sincronizados */
+  --duracion-atmosfera: 4s;
 }
 
 * {
@@ -52,7 +51,7 @@ body,
 
 body {
   font-family: var(--fuente-pixel);
-  background: var(--rosa);
+  background: var(--blanco);
   color: var(--tinta);
   image-rendering: pixelated;
 }
@@ -66,6 +65,28 @@ body {
   inset: 0;
   pointer-events: none; /* deja pasar el mouse al 3D... */
   z-index: 10;
+  /* el desenfoque vive AQUÍ, no en pantalla-carga ni en ventana-fondo —
+     este elemento nunca se desmonta, así que la transición sí tiene
+     tiempo de animarse en vez de saltar de golpe. El VALOR llega directo
+     por estilo en línea desde App.jsx (no por variable CSS — ver ahí por qué). */
+  transition: backdrop-filter var(--duracion-atmosfera) ease;
+}
+
+/* grano sobre el blur de la carga — SVG generado por código, sin archivo
+   de imagen. Vive DENTRO de .ui-overlay, antes que el resto de sus hijos,
+   así queda detrás de las ventanas pero encima del cielo desenfocado. */
+.ruido-atmosfera {
+  position: absolute;
+  inset: -20%; /* más grande que la pantalla, para que el tileo no se note en los bordes */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  transition: opacity var(--duracion-atmosfera) ease;
+}
+
+.ruido-atmosfera.visible {
+  opacity: 0.15;
 }
 
 .ui-overlay button,
@@ -156,30 +177,35 @@ body {
   inset: 0;
   display: grid;
   place-items: center;
-  backdrop-filter: blur(6px);
-  background: rgba(255, 214, 232, 0.22);
   pointer-events: auto;
 }
 
 .ventana-retro {
   width: min(460px, 92vw);
-  background: var(--aqua-90s);
-  border: 2px solid var(--tinta);
-  border-radius: 14px;
-  overflow: hidden; /* para que la barra de título respete la esquina redondeada */
-  box-shadow: var(--sombra-ventana);
+  background: var(--crema);
+  border: 1.5px solid var(--tinta);
+  /* sombra sólida desplazada, sin difuminar: plano sobre plano, como 1984 */
+  box-shadow: 3px 3px 0 var(--tinta-suave);
 }
 
-/* barra de título: plana, sin patrón de rayitas — solo el título centrado */
+/* barra de título: las rayitas horizontales clásicas del System 1, título al centro */
 .ventana-titulo {
   position: relative;
   text-align: center;
   font-size: 12px;
-  font-weight: bold;
   color: var(--tinta);
-  padding: 7px 30px;
-  background: var(--aqua-90s);
-  border-bottom: 2px solid var(--tinta);
+  padding: 6px 30px;
+  background: repeating-linear-gradient(
+    180deg,
+    var(--tinta) 0 1px,
+    var(--crema) 1px 4px
+  );
+  border-bottom: 1.5px solid var(--tinta);
+}
+
+.ventana-titulo > span {
+  background: var(--crema); /* el título "interrumpe" las rayitas */
+  padding: 0 10px;
 }
 
 /* botón de cerrar: cuadradito vacío a la IZQUIERDA, como en 1984 */
@@ -192,11 +218,10 @@ body {
   height: 13px;
   font-size: 8px;
   line-height: 1;
-  color: var(--aqua-90s); /* invisible hasta hover: el cuadrado va vacío */
+  color: var(--crema); /* invisible hasta hover: el cuadrado va vacío */
   font-family: var(--fuente-pixel);
-  background: var(--aqua-90s);
+  background: var(--crema);
   border: 1.5px solid var(--tinta);
-  border-radius: 3px;
   cursor: pointer;
 }
 
@@ -220,13 +245,17 @@ body {
 }
 
 /* ---------- pantalla de carga (pantalla 1) ---------- */
+/* SIN fondo propio: deja ver el cielo 3D real de atrás (Cielo + Velos +
+   Brillitos, sin afectos todavía — esos esperan a elegir idioma). El
+   desenfoque ahora vive en .ui-overlay (nunca se desmonta, por eso la
+   transición sí se anima) — se mantiene borroso durante toda la carga +
+   elección de idioma, y solo se despeja al entrar al manifiesto (ver App.jsx). */
 .pantalla-carga {
   position: absolute;
   inset: 0;
   z-index: 20;
   display: grid;
   place-items: center;
-  background: var(--rosa); /* tapa el 3D mientras carga: plano total */
   pointer-events: auto;
 }
 
