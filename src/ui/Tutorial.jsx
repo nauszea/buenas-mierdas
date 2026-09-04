@@ -2,10 +2,10 @@ import VentanaRetro from './VentanaRetro.jsx'
 import { useTexto } from '../lib/idioma.js'
 
 // Pantalla 3 del flujo: guía rápida de controles + botón Start.
-export default function Tutorial({ onEmpezar }) {
+export default function Tutorial({ onEmpezar, zIndex }) {
   const { t } = useTexto()
   return (
-    <VentanaRetro titulo={t.tutorialTitulo} onCerrar={onEmpezar}>
+    <VentanaRetro titulo={t.tutorialTitulo} onCerrar={onEmpezar} zIndex={zIndex}>
       <table className="tabla-controles">
         <tbody>
           {t.tutorialFilas.map(([accion, efecto]) => (

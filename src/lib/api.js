@@ -93,6 +93,7 @@ function desdeRegistro(r) {
     forma: r.forma || 'icosaedro',
     glb: r.modelo ? pb.files.getUrl(r, r.modelo) : undefined,
     reapropiaciones: r.reapropiaciones || 0,
+    avisoEmail: r.avisoEmail || '',
     esBackend: true,
   }
 }
@@ -115,7 +116,7 @@ export async function cargarAfectos() {
   return todos
 }
 
-export async function subirAfecto({ nombre, ubicacion, historia, tags, archivo }) {
+export async function subirAfecto({ nombre, ubicacion, historia, tags, archivo, avisoEmail = '' }) {
   const base = {
     nombre,
     ubicacion,
@@ -125,6 +126,7 @@ export async function subirAfecto({ nombre, ubicacion, historia, tags, archivo }
     color: alAzar(PASTELES),
     forma: alAzar(FORMAS),
     reapropiaciones: 0,
+    avisoEmail,
   }
   totalAfectos = (totalAfectos ?? 0) + 1 // el siguiente afecto ya empieza un poco más lejos
 
@@ -138,6 +140,7 @@ export async function subirAfecto({ nombre, ubicacion, historia, tags, archivo }
     fd.append('color', base.color)
     fd.append('forma', base.forma)
     fd.append('reapropiaciones', '0')
+    fd.append('avisoEmail', base.avisoEmail)
     if (archivo) fd.append('modelo', archivo)
     const registro = await pb.collection('afectos').create(fd)
     return desdeRegistro(registro)

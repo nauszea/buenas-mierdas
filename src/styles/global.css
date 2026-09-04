@@ -537,10 +537,19 @@ body {
    el temblor de la ventana por su propio bamboleo queda mucho más
    controlado que antes de esa ancla. Nunca desenfoca el fondo (ver
    App.jsx: `seleccionado` no cuenta para el blur global). */
+/* SOLO posición — el ancho y el translate llegan por estilo en línea desde
+   VistaDetalle.jsx (ver disposicionFicha.js: misma fuente que usa
+   ControlesCamara.jsx para calcular el desplazamiento de la cámara, así
+   los dos nunca se desincronizan). La animación de aparición (scale) vive
+   en .ventana-retro, un elemento ADENTRO de este — nunca en el mismo, o
+   los dos transforms compiten y gana uno solo mientras dura la animación
+   (ver el comentario grande en VistaDetalle.jsx). */
 .ventana-anclada {
   pointer-events: auto;
-  width: 280px;
-  transform: translate(56px, -50%);
+}
+
+.ventana-anclada .ventana-retro {
+  width: 100%;
 }
 
 .indice-alfabetico {
@@ -610,6 +619,25 @@ body {
   margin-top: 10px;
 }
 
+/* botón "Reapropiar" ya usado: gris, sin hover, con el cursor normal —
+   el freno suave por navegador (ver reapropiacionLocal.js) */
+.boton-gris {
+  opacity: 0.4;
+  cursor: default;
+  background: var(--crema);
+}
+
+.boton-gris:hover {
+  background: var(--crema);
+}
+
+.vineta-reapropiado {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--tinta-suave);
+}
+
 /* ---------- formulario de subida ---------- */
 .zona-drop {
   border: 1.5px dashed var(--tinta);
@@ -654,6 +682,25 @@ body {
   font-size: 11px;
   color: var(--tinta-suave);
   margin-bottom: 10px;
+}
+
+.campo-checkbox {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.campo-form label.etiqueta-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--tinta-suave);
+  cursor: pointer;
+}
+
+.etiqueta-checkbox input[type='checkbox'] {
+  cursor: pointer;
 }
 
 .enlace-retro {

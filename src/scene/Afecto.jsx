@@ -157,6 +157,8 @@ export default function Afecto({
   onHoverLejos,
   posSeguirRef,
   posicionesRef,
+  zIndexFicha,
+  portalUI,
 }) {
   const grupo = useRef()
   const material = useRef()
@@ -364,12 +366,28 @@ export default function Afecto({
           él" — si ya está lo bastante cerca como para tener la ficha
           abierta, no tiene sentido pedirle que vuele más cerca todavía. */}
       {seleccionado && cerca && (
-        <Html occlude={false} style={{ pointerEvents: 'none' }}>
+        // zIndexRange fijo (no el rango [16777271,0] por defecto, que <Html>
+        // usa para ordenar por distancia a la cámara): sin esto, el propio
+        // envoltorio que crea <Html> trae un z-index gigante propio que
+        // aplasta a CUALQUIER ventana 2D (manifiesto, buscador…) sin
+        // importar el zIndex que se le ponga a .ventana-anclada por dentro
+        // — ese número queda encerrado en el contexto de apilamiento del
+        // envoltorio, sin poder competir contra sus hermanos reales. Al
+        // fijar ambos extremos del rango en el mismo valor (zIndexFicha),
+        // el envoltorio queda con ESE z-index exacto, y compite de verdad
+        // con el resto de las ventanas en .ui-overlay.
+        <Html
+          occlude={false}
+          portal={portalUI}
+          zIndexRange={[zIndexFicha, zIndexFicha]}
+          style={{ pointerEvents: 'none' }}
+        >
           <VistaDetalle
             afecto={afecto}
             reapropiaciones={reapropiaciones}
             onReapropiar={() => onReapropiar(afecto)}
             onCerrar={onCerrarSeleccion}
+            zIndex={zIndexFicha}
           />
         </Html>
       )}

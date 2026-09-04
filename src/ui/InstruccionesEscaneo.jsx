@@ -2,10 +2,10 @@ import VentanaRetro from './VentanaRetro.jsx'
 import { useTexto } from '../lib/idioma.js'
 
 // Pantalla 7: cómo escanear tu objeto con el celular (DIY, gratis).
-export default function InstruccionesEscaneo({ onVolver }) {
+export default function InstruccionesEscaneo({ onVolver, zIndex }) {
   const { t } = useTexto()
   return (
-    <VentanaRetro titulo={t.escaneoTitulo} onCerrar={onVolver}>
+    <VentanaRetro titulo={t.escaneoTitulo} onCerrar={onVolver} zIndex={zIndex}>
       {t.escaneoPasos.map((paso, i) => (
         <p key={i}>
           <b>{i + 1}.</b> {paso}

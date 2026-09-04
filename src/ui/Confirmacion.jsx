@@ -2,10 +2,10 @@ import VentanaRetro from './VentanaRetro.jsx'
 import { useTexto } from '../lib/idioma.js'
 
 // Pantalla 9: el afecto ya existe. La cámara volará hacia él.
-export default function Confirmacion({ afecto, onIr }) {
+export default function Confirmacion({ afecto, onIr, zIndex }) {
   const { t } = useTexto()
   return (
-    <VentanaRetro titulo="✧" onCerrar={onIr}>
+    <VentanaRetro titulo="✧" onCerrar={onIr} zIndex={zIndex}>
       <p className="mensaje-confirmacion">
         {t.confirmacionTexto}
         <br />

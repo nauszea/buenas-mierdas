@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { useEffect, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
+import { ANCHO_FICHA_PX, GAP_FICHA_PX } from '../lib/disposicionFicha.js'
 
 // ---------------------------------------------------------------------------
 // ControlesCamara: navegación 3D completa.
@@ -29,6 +30,40 @@ import { OrbitControls } from '@react-three/drei'
 // ---------------------------------------------------------------------------
 
 const VELOCIDAD = 14 // unidades por segundo al volar con teclado
+
+// cuánto se corre el punto de mira hacia la DERECHA del objeto (no el
+// objeto en sí — es el punto que la cámara centra) para que la ficha, que
+// vive a su lado, no empuje toda la composición hacia la derecha.
+//
+// Así lo resuelven los videojuegos: no existe un número fijo de unidades
+// 3D que "sea" un ancho en píxeles — esa conversión depende del FOV, del
+// ancho de la ventana y de qué tan lejos está la cámara, y cambia cada vez
+// que cualquiera de esos tres cambia. Por eso esto se recalcula CADA
+// CUADRO en vez de usar una constante: se mide cuántas unidades 3D ocupa
+// un píxel a la distancia actual (con el FOV horizontal real, derivado del
+// FOV vertical de la cámara y el aspecto ancho/alto de la ventana), y se
+// usa eso para convertir el hueco de la ficha (ver disposicionFicha.js,
+// la MISMA fuente que usa VistaDetalle.jsx para su ancho real) a unidades
+// 3D. Así queda "responsivo" de verdad: sirve igual en una ventana angosta,
+// una pantalla ancha, o si el usuario hace zoom con la rueda.
+function conEspacioParaFicha(camera, size, base) {
+  const frente = new THREE.Vector3()
+  camera.getWorldDirection(frente)
+  frente.y = 0
+  if (frente.lengthSq() < 0.0001) frente.set(0, 0, 1)
+  frente.normalize()
+  const derecha = new THREE.Vector3().crossVectors(frente, camera.up).normalize()
+
+  const distancia = camera.position.distanceTo(base) || 1
+  const fovVerticalRad = THREE.MathUtils.degToRad(camera.fov)
+  const fovHorizontalRad = 2 * Math.atan(Math.tan(fovVerticalRad / 2) * (size.width / size.height))
+  const anchoMundoVisible = 2 * distancia * Math.tan(fovHorizontalRad / 2)
+  const unidadesPorPixel = anchoMundoVisible / size.width
+  const pixelesAOcupar = (GAP_FICHA_PX + ANCHO_FICHA_PX) / 2
+  const desplazamiento = pixelesAOcupar * unidadesPorPixel
+
+  return base.clone().add(derecha.multiplyScalar(desplazamiento))
+}
 
 export default function ControlesCamara({ destino, onFinDeVuelo, mirarHacia, posSeguirRef, posicionesRef }) {
   const controles = useRef()
@@ -81,7 +116,7 @@ export default function ControlesCamara({ destino, onFinDeVuelo, mirarHacia, pos
     }
   }, [])
 
-  useFrame(({ camera }, delta) => {
+  useFrame(({ camera, size }, delta) => {
     const c = controles.current
     if (!c) return
 
@@ -91,9 +126,12 @@ export default function ControlesCamara({ destino, onFinDeVuelo, mirarHacia, pos
       // su coordenada base) — apuntar a la base lo dejaba fuera de cuadro
       // al llegar, porque a 6 unidades de distancia 3 de desvío es medio
       // encuadre. Si todavía no publicó su posición, la base sirve igual.
-      const objetivo = new THREE.Vector3(
+      const objetivoReal = new THREE.Vector3(
         ...(posicionesRef?.current?.[destino.id] ?? destino.posicion),
       )
+      // el punto de mira se corre a la derecha del objeto real, así este
+      // aparece a la izquierda en pantalla y le deja sitio a su ficha
+      const objetivo = conEspacioParaFicha(camera, size, objetivoReal)
       // posición deseada: un poco arriba y atrás del objeto, del lado actual de la cámara
       const direccion = camera.position.clone().sub(objetivo)
       direccion.y = 0
@@ -133,8 +171,14 @@ export default function ControlesCamara({ destino, onFinDeVuelo, mirarHacia, pos
       }
 
       if (mirando.current) {
-        c.target.lerp(mirando.current, 0.12)
-        if (c.target.distanceTo(mirando.current) < 0.05) mirando.current = null
+        // mirando.current guarda la posición REAL del objeto; el punto de
+        // mira apunta un poco a la derecha de eso, dejándole sitio a la
+        // ficha — por eso el "ya llegamos" se mide contra ESE punto corrido,
+        // no contra el objeto real (si no, nunca se da por terminado: se
+        // queda 1.3 unidades corto para siempre).
+        const objetivoConEspacio = conEspacioParaFicha(camera, size, mirando.current)
+        c.target.lerp(objetivoConEspacio, 0.12)
+        if (c.target.distanceTo(objetivoConEspacio) < 0.05) mirando.current = null
       }
 
       // ancla de seguimiento: mientras haya un afecto con su ficha abierta
@@ -148,9 +192,10 @@ export default function ControlesCamara({ destino, onFinDeVuelo, mirarHacia, pos
         anclaSuelta.current = false
       }
       if (seguido && !anclaSuelta.current) {
-        c.target.x += (seguido.pos[0] - c.target.x) * 0.1
-        c.target.y += (seguido.pos[1] - c.target.y) * 0.1
-        c.target.z += (seguido.pos[2] - c.target.z) * 0.1
+        const conEspacio = conEspacioParaFicha(camera, size, new THREE.Vector3(...seguido.pos))
+        c.target.x += (conEspacio.x - c.target.x) * 0.1
+        c.target.y += (conEspacio.y - c.target.y) * 0.1
+        c.target.z += (conEspacio.z - c.target.z) * 0.1
       }
     }
 

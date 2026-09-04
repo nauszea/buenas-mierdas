@@ -65,10 +65,14 @@ const fragmentShader = /* glsl */ `
   void main() {
     float h = vDir.y; // -1 abajo, 0 horizonte, 1 arriba
 
-    // 1) degradé base
+    // 1) degradé base — estos dos números son el "cuánto tarda en llegar
+    // al color completo" de cada lado. Mientras MÁS ALTO el número, MÁS
+    // ARRIBA/ABAJO hay que mirar para que ese color se vea puro — así que
+    // subir el número de abajo (nadir) es lo que hace que domine más el
+    // celeste, porque el salmón tarda más en aparecer del todo.
     vec3 color = h >= 0.0
-      ? mix(uHorizonte, uCenit, smoothstep(0.0, 0.7, h))
-      : mix(uHorizonte, uNadir, smoothstep(0.0, 0.6, -h));
+      ? mix(uHorizonte, uCenit, smoothstep(0.0, 0.45, h))   // antes 0.7 — en el origen no se nota (cenit y horizonte son el mismo celeste), pero sí lejos, en los otros climas
+      : mix(uHorizonte, uNadir, smoothstep(0.0, 1.2, -h));  // antes 0.6 — ESTE es el que hacía ver tanto salmón
 
     // 2) vapores: dos capas de gas fbm derivando a distinta velocidad
     float gas1 = fbm(vDir * 2.6 + vec3(uTiempo * 0.018, uTiempo * 0.011, 0.0));

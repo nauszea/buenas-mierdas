@@ -5,11 +5,11 @@ import { sonidoAparecer } from '../lib/efectos.js'
 // Barra de título con rayitas, título centrado que las interrumpe,
 // y botón de cerrar como cuadradito a la IZQUIERDA (como en los Mac viejos).
 // Flota SOBRE el canvas 3D (no vive dentro de él).
-export default function VentanaRetro({ titulo, onCerrar, children }) {
+export default function VentanaRetro({ titulo, onCerrar, zIndex, children }) {
   useEffect(() => { sonidoAparecer() }, [])
 
   return (
-    <div className="ventana-fondo">
+    <div className="ventana-fondo" style={{ zIndex }}>
       <div className="ventana-retro" role="dialog" aria-label={titulo}>
         <div className="ventana-titulo">
           <button className="ventana-cerrar" onClick={onCerrar} aria-label="cerrar">

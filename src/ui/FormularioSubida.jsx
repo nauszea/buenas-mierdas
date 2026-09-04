@@ -8,7 +8,7 @@ import { useTexto } from '../lib/idioma.js'
 // Sin GPS, sin datos personales: la ubicación es texto libre y poético.
 // ---------------------------------------------------------------------------
 
-export default function FormularioSubida({ onCreado, onCerrar, onInstrucciones }) {
+export default function FormularioSubida({ onCreado, onCerrar, onInstrucciones, zIndex }) {
   const { t } = useTexto()
   const inputArchivo = useRef()
   const [archivo, setArchivo] = useState(null)
@@ -17,6 +17,8 @@ export default function FormularioSubida({ onCreado, onCerrar, onInstrucciones }
   const [ubicacion, setUbicacion] = useState('')
   const [historia, setHistoria] = useState('')
   const [tags, setTags] = useState('')
+  const [notificar, setNotificar] = useState(false)
+  const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [subiendo, setSubiendo] = useState(false)
 
@@ -49,6 +51,7 @@ export default function FormularioSubida({ onCreado, onCerrar, onInstrucciones }
           .map((etiqueta) => etiqueta.trim().replace(/^#/, '').toLowerCase())
           .filter(Boolean),
         archivo,
+        avisoEmail: notificar ? email.trim() : '',
       })
       onCreado(nuevo)
     } catch (err) {
@@ -59,7 +62,7 @@ export default function FormularioSubida({ onCreado, onCerrar, onInstrucciones }
   }
 
   return (
-    <VentanaRetro titulo={t.subirTitulo} onCerrar={onCerrar}>
+    <VentanaRetro titulo={t.subirTitulo} onCerrar={onCerrar} zIndex={zIndex}>
       <form onSubmit={enviar}>
         <div
           className={
@@ -132,6 +135,26 @@ export default function FormularioSubida({ onCreado, onCerrar, onInstrucciones }
             onChange={(e) => setTags(e.target.value)}
             placeholder={t.subirTagsEj}
           />
+        </div>
+
+        <div className="campo-form campo-checkbox">
+          <label className="etiqueta-checkbox">
+            <input
+              type="checkbox"
+              checked={notificar}
+              onChange={(e) => setNotificar(e.target.checked)}
+            />{' '}
+            {t.subirNotificarLabel}
+          </label>
+          {notificar && (
+            <input
+              className="input-retro"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={t.subirNotificarEmailEj}
+            />
+          )}
         </div>
 
         {error && <p className="error-form">{error}</p>}

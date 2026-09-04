@@ -12,6 +12,7 @@ export const TEXTOS = {
     eligeIdioma: 'elige tu idioma',
     botonBuscar: '⌕ buscar',
     botonManifiesto: 'manifiesto.txt',
+    botonControles: 'como_navegar.txt',
     botonSubir: '↑ Subir un afecto',
 
     manifiestoTitulo: 'manifiesto.txt',
@@ -40,6 +41,7 @@ export const TEXTOS = {
     detalleReapropiado: 'reapropiado {n} de 100 veces',
     detalleConsagrado: '★ CONSAGRADO ★ afecto de afectos',
     detalleReapropiar: '✥ Reapropiar',
+    detalleYaReapropiado: 'ya reapropiaste este afecto',
     detalleVolar: '➤ Volar hacia él',
     etiquetaVolar: 'clic para volar hacia él',
 
@@ -57,6 +59,8 @@ export const TEXTOS = {
     subirHistoriaEj: 'por qué este objeto merece existir en otro plano…',
     subirTags: 'etiquetas (separadas por comas)',
     subirTagsEj: 'cerámica, familia, desayuno',
+    subirNotificarLabel: 'avísame cuando reapropien o consagren mi afecto',
+    subirNotificarEmailEj: 'tu correo (opcional, solo para este aviso)',
     subirBoton: '✧ Situar en el altar',
     subirSubiendo: 'subiendo…',
     errorArchivo: 'Ese archivo no es un modelo 3D — necesito un .glb (exportado de Polycam o similar).',
@@ -84,6 +88,7 @@ export const TEXTOS = {
     eligeIdioma: 'choose your language',
     botonBuscar: '⌕ search',
     botonManifiesto: 'manifesto.txt',
+    botonControles: 'how_to_navigate.txt',
     botonSubir: '↑ Upload an affect',
 
     manifiestoTitulo: 'manifesto.txt',
@@ -112,6 +117,7 @@ export const TEXTOS = {
     detalleReapropiado: 'reappropriated {n} of 100 times',
     detalleConsagrado: '★ CONSECRATED ★ affect of affects',
     detalleReapropiar: '✥ Reappropriate',
+    detalleYaReapropiado: 'you already reappropriated this affect',
     detalleVolar: '➤ Fly to it',
     etiquetaVolar: 'click to fly to it',
 
@@ -129,6 +135,8 @@ export const TEXTOS = {
     subirHistoriaEj: 'why this object deserves to exist on another plane…',
     subirTags: 'tags (separated by commas)',
     subirTagsEj: 'ceramic, family, breakfast',
+    subirNotificarLabel: 'notify me when my affect is reappropriated or consecrated',
+    subirNotificarEmailEj: 'your email (optional, just for this notice)',
     subirBoton: '✧ Place on the altar',
     subirSubiendo: 'uploading…',
     errorArchivo: 'That file is not a 3D model — I need a .glb (exported from Polycam or similar).',
@@ -156,6 +164,7 @@ export const TEXTOS = {
     eligeIdioma: 'wähle deine Sprache',
     botonBuscar: '⌕ suchen',
     botonManifiesto: 'manifest.txt',
+    botonControles: 'navigation.txt',
     botonSubir: '↑ Einen Affekt hochladen',
 
     manifiestoTitulo: 'manifest.txt',
@@ -184,6 +193,7 @@ export const TEXTOS = {
     detalleReapropiado: '{n} von 100 Mal wiederangeeignet',
     detalleConsagrado: '★ GEWEIHT ★ Affekt der Affekte',
     detalleReapropiar: '✥ Wiederaneignen',
+    detalleYaReapropiado: 'du hast diesen Affekt bereits wiederangeeignet',
     detalleVolar: '➤ Hinfliegen',
     etiquetaVolar: 'klicken zum Hinfliegen',
 
@@ -201,6 +211,8 @@ export const TEXTOS = {
     subirHistoriaEj: 'warum dieses Objekt auf einer anderen Ebene existieren soll…',
     subirTags: 'Schlagwörter (durch Kommas getrennt)',
     subirTagsEj: 'Keramik, Familie, Frühstück',
+    subirNotificarLabel: 'benachrichtige mich, wenn mein Affekt wiederangeeignet oder geweiht wird',
+    subirNotificarEmailEj: 'deine E-Mail (optional, nur für diesen Hinweis)',
     subirBoton: '✧ Auf den Altar stellen',
     subirSubiendo: 'lädt hoch…',
     errorArchivo: 'Diese Datei ist kein 3D-Modell — ich brauche eine .glb (aus Polycam o. ä. exportiert).',

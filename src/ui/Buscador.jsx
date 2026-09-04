@@ -52,7 +52,7 @@ function ItemAfecto({ a, onVolar }) {
   )
 }
 
-export default function Buscador({ afectos, onVolar, onCerrar }) {
+export default function Buscador({ afectos, onVolar, onCerrar, zIndex }) {
   const { t } = useTexto()
   const [filtro, setFiltro] = useState('')
   const listaRef = useRef()
@@ -80,7 +80,7 @@ export default function Buscador({ afectos, onVolar, onCerrar }) {
   }
 
   return (
-    <VentanaRetro titulo={t.buscadorTitulo} onCerrar={onCerrar}>
+    <VentanaRetro titulo={t.buscadorTitulo} onCerrar={onCerrar} zIndex={zIndex}>
       <input
         className="input-retro"
         type="text"

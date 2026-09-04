@@ -18,6 +18,7 @@ import FormularioSubida from './ui/FormularioSubida.jsx'
 import InstruccionesEscaneo from './ui/InstruccionesEscaneo.jsx'
 import Confirmacion from './ui/Confirmacion.jsx'
 import { cargarAfectos, registrarReapropiacion } from './lib/api.js'
+import { marcarReapropiado } from './lib/reapropiacionLocal.js'
 import { IdiomaContext, TEXTOS } from './lib/idioma.js'
 
 export default function App() {
@@ -54,6 +55,47 @@ export default function App() {
   const [reapropiaciones, setReapropiaciones] = useState({})
   const [pulsos, setPulsos] = useState({})
   const [musicaSonando, setMusicaSonando] = useState(false)
+
+  // dónde vive de verdad la UI 2D en el DOM — se lo pasamos a cada <Html>
+  // de la ficha anclada (ver Afecto.jsx) como su `portal`, así esa ficha
+  // queda DENTRO del mismo árbol que el resto de las ventanas en vez de
+  // flotar afuera como hermana suelta del canvas (el comportamiento por
+  // defecto de <Html>). Sin esto, el z-index de abajo no alcanza: .ui-overlay
+  // tiene su propio z-index fijo (10) que encierra a sus hijos en su propio
+  // "piso" — cualquier cosa AFUERA de ese piso (como la ficha, por defecto)
+  // queda peleando en otra categoría aparte, sin importar qué tan reciente
+  // se haya abierto. Con todo compartiendo el mismo padre, un solo contador
+  // de z-index ordena a todas las ventanas por igual.
+  const overlayRef = useRef(null)
+
+  // quién está ENCIMA de quién: cada "ranura" de ventana (la familia de
+  // pantallas mutuamente excluyentes, el buscador, la ficha anclada) tiene
+  // su propio z-index, y sube al tope del contador compartido cada vez que
+  // se abre — así la última que abriste siempre gana, sin importar en qué
+  // orden viven en el JSX. Antes no había ningún z-index explícito, así
+  // que el orden salía de la cascada normal de CSS (fijo, no por
+  // recencia) — por eso el manifiesto podía abrirse DETRÁS de la ficha
+  // que ya estaba abierta.
+  const zTope = useRef(20)
+  const [zPantalla, setZPantalla] = useState(21)
+  const [zBuscador, setZBuscador] = useState(21)
+  const [zFicha, setZFicha] = useState(21)
+  useEffect(() => {
+    if (pantalla && pantalla !== 'carga') setZPantalla(++zTope.current)
+  }, [pantalla])
+  useEffect(() => {
+    if (buscadorAbierto) setZBuscador(++zTope.current)
+  }, [buscadorAbierto])
+  useEffect(() => {
+    if (seleccionado) setZFicha(++zTope.current)
+  }, [seleccionado])
+
+  // el manifiesto lleva a la guía de controles SOLO la primera vez (el
+  // recorrido de bienvenida: manifiesto → tutorial → altar). Reabrirlo
+  // después desde el botón del header cierra derecho al altar libre — antes
+  // SIEMPRE encadenaba al tutorial, así que cada vez que alguien releía el
+  // manifiesto quedaba forzada a pasar de nuevo por la guía de controles.
+  const primeraVezManifiesto = useRef(true)
 
   const t = TEXTOS[idioma]
 
@@ -154,6 +196,7 @@ export default function App() {
     setReapropiaciones((r) => ({ ...r, [afecto.id]: cuentaNueva }))
     setPulsos((p) => ({ ...p, [afecto.id]: performance.now() }))
     registrarReapropiacion(afecto, cuentaNueva) // persiste sin bloquear la UI
+    marcarReapropiado(afecto.id) // freno suave: esta persona ya no puede repetir en este afecto
     // el acorde triunfal suena UNA sola vez, justo al cruzar a consagrado
     if (cuentaAnterior < 100 && cuentaNueva >= 100) sonidoConsagrar()
     else sonidoReapropiar()
@@ -207,6 +250,8 @@ export default function App() {
               onHoverLejos={reportarHoverLejos}
               posSeguirRef={posSeguirRef}
               posicionesRef={posicionesRef}
+              zIndexFicha={zFicha}
+              portalUI={overlayRef}
             />
           ))}
 
@@ -227,6 +272,7 @@ export default function App() {
             siempre animan bien una transición cuando el valor llega a
             través de var(), aunque la variable sí cambie. */}
         <div
+          ref={overlayRef}
           className="ui-overlay"
           style={{ backdropFilter: `blur(${blurPx}px)`, transition: `backdrop-filter ${duracionBlur} ease` }}
         >
@@ -260,6 +306,9 @@ export default function App() {
                   </button>{' '}
                   <button className="boton-retro" onClick={() => setPantalla('manifiesto')}>
                     {t.botonManifiesto}
+                  </button>{' '}
+                  <button className="boton-retro" onClick={() => setPantalla('tutorial')}>
+                    {t.botonControles}
                   </button>
                 </span>
               </header>
@@ -289,24 +338,41 @@ export default function App() {
           )}
 
           {pantalla === 'manifiesto' && (
-            <VentanaRetro titulo={t.manifiestoTitulo} onCerrar={() => setPantalla('tutorial')}>
+            <VentanaRetro
+              titulo={t.manifiestoTitulo}
+              zIndex={zPantalla}
+              onCerrar={() => {
+                // solo la primera vez (recorrido de bienvenida) sigue a la
+                // guía de controles — después, cerrar el manifiesto vuelve
+                // derecho al altar libre (ver nota junto a la ref más arriba)
+                if (primeraVezManifiesto.current) {
+                  primeraVezManifiesto.current = false
+                  setPantalla('tutorial')
+                } else {
+                  setPantalla(null)
+                }
+              }}
+            >
               <p style={{ whiteSpace: 'pre-line' }}>{t.manifiestoCuerpo}</p>
               <p className="parpadeo">{t.manifiestoContinuar}</p>
             </VentanaRetro>
           )}
 
-          {pantalla === 'tutorial' && <Tutorial onEmpezar={() => setPantalla(null)} />}
+          {pantalla === 'tutorial' && (
+            <Tutorial onEmpezar={() => setPantalla(null)} zIndex={zPantalla} />
+          )}
 
           {pantalla === 'subir' && (
             <FormularioSubida
               onCreado={alCrearAfecto}
               onCerrar={() => setPantalla(null)}
               onInstrucciones={() => setPantalla('instrucciones')}
+              zIndex={zPantalla}
             />
           )}
 
           {pantalla === 'instrucciones' && (
-            <InstruccionesEscaneo onVolver={() => setPantalla('subir')} />
+            <InstruccionesEscaneo onVolver={() => setPantalla('subir')} zIndex={zPantalla} />
           )}
 
           {pantalla === 'confirmacion' && nuevoAfecto && (
@@ -316,11 +382,17 @@ export default function App() {
                 setPantalla(null)
                 volarHacia(nuevoAfecto)
               }}
+              zIndex={zPantalla}
             />
           )}
 
           {buscadorAbierto && (
-            <Buscador afectos={afectos} onVolar={volarHacia} onCerrar={() => setBuscadorAbierto(false)} />
+            <Buscador
+              afectos={afectos}
+              onVolar={volarHacia}
+              onCerrar={() => setBuscadorAbierto(false)}
+              zIndex={zBuscador}
+            />
           )}
         </div>
       </div>
