@@ -18,7 +18,11 @@ const CUADROS_ASCII = [
   '   ,___,\n   (⌐■_■)\n   /)  )\n  -"---"-',
 ]
 const FRAME_MS = 500
-const DURACION_CRAWL_S = 14
+const DURACION_CRAWL_S = 12
+// el piolín aparece ANTES de que el crawl termine del todo (no a los 12s
+// exactos) — así no se siente como una espera aparte pegada al final,
+// sino que llega "encima" de las últimas líneas
+const RETRASO_ASCII_S = DURACION_CRAWL_S - 2
 
 export default function Creditos({ onCerrar, zIndex }) {
   const { t } = useTexto()
@@ -44,7 +48,7 @@ export default function Creditos({ onCerrar, zIndex }) {
             {t.creditosTexto}
           </p>
         </div>
-        <pre className="creditos-ascii" style={{ animationDelay: `${DURACION_CRAWL_S}s` }}>
+        <pre className="creditos-ascii" style={{ animationDelay: `${RETRASO_ASCII_S}s` }}>
           {CUADROS_ASCII[cuadro]}
         </pre>
       </div>

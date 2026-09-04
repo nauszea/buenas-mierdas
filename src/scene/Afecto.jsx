@@ -286,7 +286,12 @@ export default function Afecto({
           afecto.posicion[1] + Math.sin(t * deriva.velRespira + deriva.fase) * 0.7,
           afecto.posicion[2] + Math.sin(angulo) * deriva.radio,
         )
-        giroDeriva.current += deriva.velGiro * delta
+        // mientras está seleccionado, el giro de deriva queda CONGELADO en
+        // 0 — si siguiera sumando de fondo, para cuando termina la
+        // vueltita y de verdad lo estás mirando ya se corrió unos grados
+        // del ángulo "de frente" (rotacionBase), aunque sea poco. Recién
+        // al cerrar la ficha (deseleccionar) retoma el giro, desde cero.
+        if (!seleccionado) giroDeriva.current += deriva.velGiro * delta
         grupo.current.rotation.y = giroDeriva.current + rotacionBase + giroSeleccion
       }
     }

@@ -185,7 +185,7 @@ export const TEXTOS = {
     botonCreditos: '© credits',
     creditosTitulo: 'credits.txt',
     creditosTexto:
-      'ideado en base a la tesis de bichito\n2024 — 2026\n\nagradecimientos —\n\na las cachinas de San Juan de Lurigancho y de Tacora\n\na Vania y Giordano, por las tardes de vino y tarot\n\na Lucy, por los viajes bajo el sol y los juguetes de un sol\n\na Alejo, por estar siempre ahí\n\na Tokeshi, por los poemas regalados\n\ny a Claude, por ser mi asistente de madrugada\n\netc, etc…',
+      "based on bichito's thesis\n2024 — 2026\n\nthanks —\n\nto the flea markets of San Juan de Lurigancho and Tacora\n\nto Vania and Giordano, for the evenings of wine and tarot\n\nto Lucy, for the trips under the sun and the one-sol toys\n\nto Alejo, for always being there\n\nto Tokeshi, for the gifted poems\n\nand to Claude, for being my late-night assistant\n\netc, etc…",
   },
 
   de: {
