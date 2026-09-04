@@ -425,14 +425,24 @@ export default function Afecto({
       {/* el aura: un halo grande con mezcla ADITIVA, así se sigue viendo
           como un punto brillante incluso desde muy lejos — la "estrella
           más brillante del firmamento", a diferencia del glow normal del
-          material, que se apaga con la distancia como todo lo demás */}
+          material, que se apaga con la distancia como todo lo demás.
+          depthTest={false} + renderOrder negativo: sin esto, el sprite (un
+          plano 2D siempre de cara a la cámara) compite por profundidad
+          real contra la malla del objeto, y como su centro está EN el
+          mismo punto que el objeto, la mitad del halo gana esa pelea y
+          queda por delante — envolviendo la forma en vez de quedar detrás
+          de ella. Pintándolo primero (renderOrder bajo) y sin comparar
+          profundidad, siempre queda detrás de cualquier malla opaca que
+          se dibuje después (el objeto, con su profundidad normal, la
+          tapa donde corresponde). */}
       {consagrado && (
-        <sprite scale={[5, 5, 1]}>
+        <sprite scale={[5, 5, 1]} renderOrder={-1}>
           <spriteMaterial
             map={texturaAura()}
             transparent
             opacity={0.5}
             depthWrite={false}
+            depthTest={false}
             blending={THREE.AdditiveBlending}
             fog={false}
           />
