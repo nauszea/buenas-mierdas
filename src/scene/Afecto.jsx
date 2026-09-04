@@ -69,7 +69,7 @@ function Forma({ forma }) {
 function ModeloGLB({ url, escala = 1, desgaste = 0, consagrado = false, hover = false, pulso = 0 }) {
   const { scene } = useGLTF(url)
 
-  const { objeto, capaDesgaste, materiales, desgasteMats } = useMemo(() => {
+  const { objeto, capaDesgaste, capaContraluz, materiales, desgasteMats, contraluzMats } = useMemo(() => {
     const clon = scene.clone()
 
     const cajaOriginal = new THREE.Box3().setFromObject(clon)
@@ -126,12 +126,34 @@ function ModeloGLB({ url, escala = 1, desgaste = 0, consagrado = false, hover = 
     })
     capa.scale.multiplyScalar(1.02)
 
-    return { objeto: clon, capaDesgaste: capa, materiales, desgasteMats }
+    // el borde a contraluz del consagrado: una segunda copia, un poco más
+    // grande, pintada SOLO por dentro (side: BackSide) con un material sin
+    // luz (MeshBasicMaterial no reacciona a las luces de la escena ni
+    // proyecta sombra — "su propia lógica", como pidió la fundadora, en
+    // vez de sumarse al sistema de luces normal). Al agrandar la copia,
+    // sus caras traseras asoman justo por el borde del objeto real y
+    // quedan tapadas en el centro — el resultado es un filo brillante
+    // rodeando la silueta, como si la luz viniera de atrás.
+    const capaC = clon.clone()
+    const contraluzMats = []
+    capaC.traverse((hijo) => {
+      if (hijo.isMesh) {
+        const mat = new THREE.MeshBasicMaterial({
+          color: COLOR_CONSAGRADO, transparent: true, opacity: 0, depthWrite: false, side: THREE.BackSide,
+        })
+        hijo.material = mat
+        contraluzMats.push(mat)
+      }
+    })
+    capaC.scale.multiplyScalar(1.12)
+
+    return { objeto: clon, capaDesgaste: capa, capaContraluz: capaC, materiales, desgasteMats, contraluzMats }
   }, [scene, escala])
 
   useEffect(() => {
     desgasteMats.forEach((m) => { m.opacity = desgaste * (consagrado ? 0.45 : 0.9) })
-  }, [desgaste, consagrado, desgasteMats])
+    contraluzMats.forEach((m) => { m.opacity = consagrado ? 0.6 : 0 })
+  }, [desgaste, consagrado, desgasteMats, contraluzMats])
 
   useFrame(() => {
     const destello = pulso ? Math.max(0, 1.6 - (performance.now() - pulso) / 300) : 0
@@ -153,6 +175,7 @@ function ModeloGLB({ url, escala = 1, desgaste = 0, consagrado = false, hover = 
     <>
       <primitive object={objeto} />
       {desgaste > 0 && <primitive object={capaDesgaste} />}
+      {consagrado && <primitive object={capaContraluz} />}
     </>
   )
 }
@@ -294,12 +317,21 @@ export default function Afecto({
   useFrame(({ camera, clock }, delta) => {
     cuadro.current += 1
 
-    // cuánto falta del giro de selección, con ease-out cúbico (rápido al
-    // empezar, se asienta suave) — 2π es una vuelta completa
+    // el "vistazo" de selección: un vaivén corto (sube y vuelve a 0, como
+    // un cabeceo), NO una vuelta completa. Antes era un giro de 2π
+    // completo — pero eso significa que a MITAD de esos ~600ms el objeto
+    // pasa literalmente por "de costado" antes de completar la vuelta. Si
+    // alguien mira o hace una captura justo en ese instante (lo más
+    // probable, porque es justo cuando recién llega), lo ve de costado
+    // aunque el mecanismo de "mirar hacia la cámara" esté funcionando
+    // bien — no era un bug de orientación, era esta animación pasando por
+    // el peor ángulo posible a mitad de camino. Con seno, nunca se aleja
+    // más de ~35° del ángulo correcto, así que no hay ningún punto de su
+    // recorrido que se vea "de costado".
     let giroSeleccion = 0
     if (vuelta.current.activa) {
       const progreso = Math.min(1, (performance.now() - vuelta.current.inicio) / DURACION_VUELTA_MS)
-      giroSeleccion = (1 - Math.pow(1 - progreso, 3)) * Math.PI * 2
+      giroSeleccion = Math.sin(progreso * Math.PI) * THREE.MathUtils.degToRad(35)
       if (progreso >= 1) vuelta.current.activa = false
     }
 
@@ -362,14 +394,9 @@ export default function Afecto({
     }
     if (material.current) {
       const destello = pulso ? Math.max(0, 1.6 - (performance.now() - pulso) / 300) : 0
-      // consagrado bajó de 0.5 a 0.18 (2026-09-04): a 0.5, con el emissive
-    // casi blanco de COLOR_CONSAGRADO, la propia superficie del objeto se
-    // quemaba a blanco parejo — se perdía el sombreado que revela sus
-    // facetas, así que ya no se notaba ninguna forma, solo un bulto
-    // brillante. A 0.18 el objeto se ve tibiamente iluminado, pero
-    // conserva su volumen — el brillo fuerte ahora es tarea del halo de
-    // atrás (el <sprite>), no de la superficie misma.
-    const base = consagrado ? 0.18 : hover ? 0.35 : 0.08
+      // consagrado bajó de 0.5 a 0.18 (2026-09-04) — ver la nota igual en
+      // ModeloGLB de por qué (se quemaba a blanco parejo, sin sombreado)
+      const base = consagrado ? 0.18 : hover ? 0.35 : 0.08
       material.current.emissiveIntensity = THREE.MathUtils.lerp(
         material.current.emissiveIntensity, base + destello, 0.18,
       )
@@ -449,6 +476,21 @@ export default function Afecto({
               />
             </mesh>
           )}
+
+          {/* el mismo borde a contraluz que ModeloGLB — ver esa nota más
+              arriba para el porqué del side:BackSide + MeshBasicMaterial */}
+          {consagrado && (
+            <mesh scale={1.12}>
+              <Forma forma={afecto.forma} />
+              <meshBasicMaterial
+                color="#fff6b8"
+                transparent
+                opacity={0.6}
+                depthWrite={false}
+                side={THREE.BackSide}
+              />
+            </mesh>
+          )}
         </>
       )}
 
@@ -469,13 +511,12 @@ export default function Afecto({
           se dibuje después (el objeto, con su profundidad normal, la
           tapa donde corresponde). */}
       {consagrado && (
-        // escala y opacidad bajadas (2026-09-04): a 5/0.5 el halo era más
-        // grande que el propio objeto y, sumado al brillo de la superficie
-        // (ver `base` arriba), no dejaba distinguir dónde terminaba el
-        // halo y empezaba la figura. Más chico y más tenue, se lee como un
-        // resplandor DETRÁS del objeto en vez de tragárselo — ajustable
+        // escala y opacidad bajadas de 5/0.5 el 2026-09-04 (era más grande
+        // que el propio objeto y, sumado al brillo de la superficie, no
+        // dejaba distinguir dónde terminaba el halo y empezaba la figura),
+        // y la escala subida un poco de nuevo (3→3.8) a pedido — ajustable
         // acá mismo si sigue sin sentirse bien.
-        <sprite scale={[3, 3, 1]} renderOrder={-1}>
+        <sprite scale={[3.8, 3.8, 1]} renderOrder={-1}>
           <spriteMaterial
             map={texturaAura()}
             transparent
