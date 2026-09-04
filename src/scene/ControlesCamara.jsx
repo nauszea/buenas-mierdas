@@ -116,9 +116,50 @@ export default function ControlesCamara({ destino, onFinDeVuelo, mirarHacia, pos
     }
   }, [])
 
+  // "girar el objeto mismo, no la cámara": mientras hay un afecto con su
+  // ficha abierta (posSeguirRef.current), el arrastre con clic izquierdo
+  // deja de orbitar la cámara (eso se desactiva más abajo, en el cuadro a
+  // cuadro) y en cambio suma directo al giro manual de ESE afecto —
+  // `rotManual` vive pegado al mismo objeto que ya usa el ancla de
+  // seguimiento, así Afecto.jsx lo puede leer sin necesitar una ref nueva.
+  // Clic derecho (pan) sigue intacto — solo se intercepta el botón
+  // izquierdo, el mismo que normalmente rota la cámara.
+  useEffect(() => {
+    const c = controles.current
+    if (!c) return
+    let arrastrando = false
+    let xAnterior = 0
+    const abajo = (e) => {
+      if (e.button !== 0 || !posSeguirRef?.current) return
+      arrastrando = true
+      xAnterior = e.clientX
+    }
+    const mover = (e) => {
+      if (!arrastrando || !posSeguirRef?.current) return
+      const dx = e.clientX - xAnterior
+      xAnterior = e.clientX
+      posSeguirRef.current.rotManual = (posSeguirRef.current.rotManual || 0) + dx * 0.012
+    }
+    const soltar = () => { arrastrando = false }
+    c.domElement?.addEventListener('pointerdown', abajo)
+    window.addEventListener('pointermove', mover)
+    window.addEventListener('pointerup', soltar)
+    return () => {
+      c.domElement?.removeEventListener('pointerdown', abajo)
+      window.removeEventListener('pointermove', mover)
+      window.removeEventListener('pointerup', soltar)
+    }
+  }, [posSeguirRef])
+
   useFrame(({ camera, size }, delta) => {
     const c = controles.current
     if (!c) return
+
+    // mientras hay un afecto con su ficha abierta, el arrastre normal de
+    // OrbitControls (rotar la cámara) se apaga — el listener de arriba
+    // toma ese mismo gesto y gira el OBJETO en su lugar. El pan (clic
+    // derecho) y el zoom (rueda) siguen intactos.
+    c.enableRotate = !posSeguirRef?.current
 
     if (destino) {
       // ---- vuelo automático hacia un afecto ----

@@ -69,7 +69,7 @@ function Forma({ forma }) {
 function ModeloGLB({ url, escala = 1, desgaste = 0, consagrado = false, hover = false, pulso = 0 }) {
   const { scene } = useGLTF(url)
 
-  const { objeto, capaDesgaste, capaContraluz, materiales, desgasteMats, contraluzMats } = useMemo(() => {
+  const { objeto, capaDesgaste, materiales, desgasteMats } = useMemo(() => {
     const clon = scene.clone()
 
     const cajaOriginal = new THREE.Box3().setFromObject(clon)
@@ -126,34 +126,21 @@ function ModeloGLB({ url, escala = 1, desgaste = 0, consagrado = false, hover = 
     })
     capa.scale.multiplyScalar(1.02)
 
-    // el borde a contraluz del consagrado: una segunda copia, un poco más
-    // grande, pintada SOLO por dentro (side: BackSide) con un material sin
-    // luz (MeshBasicMaterial no reacciona a las luces de la escena ni
-    // proyecta sombra — "su propia lógica", como pidió la fundadora, en
-    // vez de sumarse al sistema de luces normal). Al agrandar la copia,
-    // sus caras traseras asoman justo por el borde del objeto real y
-    // quedan tapadas en el centro — el resultado es un filo brillante
-    // rodeando la silueta, como si la luz viniera de atrás.
-    const capaC = clon.clone()
-    const contraluzMats = []
-    capaC.traverse((hijo) => {
-      if (hijo.isMesh) {
-        const mat = new THREE.MeshBasicMaterial({
-          color: COLOR_CONSAGRADO, transparent: true, opacity: 0, depthWrite: false, side: THREE.BackSide,
-        })
-        hijo.material = mat
-        contraluzMats.push(mat)
-      }
-    })
-    capaC.scale.multiplyScalar(1.12)
-
-    return { objeto: clon, capaDesgaste: capa, capaContraluz: capaC, materiales, desgasteMats, contraluzMats }
+    // NOTA (2026-09-04): se probó acá un borde a contraluz (capa extra
+    // agrandada, pintada por dentro con BackSide) — la fundadora lo vio y
+    // no le gustó: "parece una capa de plástico encima". Lo que pidió en
+    // realidad es un verdadero rim-light (Fresnel) — brillo que aparece
+    // EN la propia superficie, más fuerte en los bordes según el ángulo
+    // de vista, no una segunda malla separada. Eso necesita meterle mano
+    // al shader del material (onBeforeCompile), y no llegué a probarlo en
+    // vivo esta ronda — revertido al halo simple de atrás (el <sprite>
+    // más abajo) mientras tanto, tal como pidió si no se lograba bien.
+    return { objeto: clon, capaDesgaste: capa, materiales, desgasteMats }
   }, [scene, escala])
 
   useEffect(() => {
     desgasteMats.forEach((m) => { m.opacity = desgaste * (consagrado ? 0.45 : 0.9) })
-    contraluzMats.forEach((m) => { m.opacity = consagrado ? 0.6 : 0 })
-  }, [desgaste, consagrado, desgasteMats, contraluzMats])
+  }, [desgaste, consagrado, desgasteMats])
 
   useFrame(() => {
     const destello = pulso ? Math.max(0, 1.6 - (performance.now() - pulso) / 300) : 0
@@ -175,7 +162,6 @@ function ModeloGLB({ url, escala = 1, desgaste = 0, consagrado = false, hover = 
     <>
       <primitive object={objeto} />
       {desgaste > 0 && <primitive object={capaDesgaste} />}
-      {consagrado && <primitive object={capaContraluz} />}
     </>
   )
 }
@@ -362,7 +348,11 @@ export default function Afecto({
       // al deseleccionar, retoma su giro de deriva normal desde cero
       let baseGiro = 0
       if (seleccionado) {
-        baseGiro = anguloHaciaCamara.current
+        // el giro manual (arrastrar para inspeccionarlo, ver
+        // ControlesCamara.jsx) se SUMA encima de mirar hacia la cámara —
+        // así arrancas viéndolo de frente y desde ahí lo giras vos misma
+        const rotManual = posSeguirRef?.current?.id === afecto.id ? posSeguirRef.current.rotManual || 0 : 0
+        baseGiro = anguloHaciaCamara.current + rotManual
       } else if (!consagrado) {
         giroDeriva.current += deriva.velGiro * delta
         baseGiro = giroDeriva.current
@@ -412,11 +402,16 @@ export default function Afecto({
 
     // mientras la ficha de ESTE afecto está abierta, publicamos su
     // posición en vivo cuadro a cuadro — sigue orbitando/flotando (deriva)
-    // y ControlesCamara lo usa para que el punto de mira lo persiga solo
+    // y ControlesCamara lo usa para que el punto de mira lo persiga solo.
+    // `rotManual` (el giro que el usuario le da arrastrando, ver
+    // ControlesCamara.jsx) se PRESERVA acá, no se pisa — si no, cada
+    // cuadro lo resetearía a 0 apenas se vuelve a escribir este objeto.
     if (seleccionado && cerca && posSeguirRef && grupo.current) {
+      const rotManualPrevio = posSeguirRef.current?.id === afecto.id ? posSeguirRef.current.rotManual : 0
       posSeguirRef.current = {
         id: afecto.id,
         pos: [grupo.current.position.x, grupo.current.position.y, grupo.current.position.z],
+        rotManual: rotManualPrevio || 0,
       }
     }
   })
@@ -473,21 +468,6 @@ export default function Afecto({
                 transparent
                 opacity={desgaste * (consagrado ? 0.45 : 0.9)}
                 depthWrite={false}
-              />
-            </mesh>
-          )}
-
-          {/* el mismo borde a contraluz que ModeloGLB — ver esa nota más
-              arriba para el porqué del side:BackSide + MeshBasicMaterial */}
-          {consagrado && (
-            <mesh scale={1.12}>
-              <Forma forma={afecto.forma} />
-              <meshBasicMaterial
-                color="#fff6b8"
-                transparent
-                opacity={0.6}
-                depthWrite={false}
-                side={THREE.BackSide}
               />
             </mesh>
           )}

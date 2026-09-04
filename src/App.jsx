@@ -358,8 +358,11 @@ export default function App() {
 
               {/* solo en el altar libre de verdad — nada abierto encima, ni
                   un afecto lejano en hover (ese mismo lugar lo ocupa el
-                  prompt de "volar hacia él" de abajo) */}
-              {pantalla === null && !ventanaAbierta && !objetoLejanoHover && <AyudaNavegacion />}
+                  prompt de "volar hacia él" de abajo), ni un afecto ya
+                  seleccionado (ahí la cámara está "lockeada" mirándolo —
+                  el "arrastra para girar" ya no aplica, porque arrastrar
+                  ahí gira al OBJETO, no orbita la cámara libremente) */}
+              {pantalla === null && !ventanaAbierta && !objetoLejanoHover && !seleccionado && <AyudaNavegacion />}
 
               {/* hover sobre un afecto lejano: el cartel de abajo. Es un
                   AVISO, no un botón — lo que se clica es el objeto mismo,
