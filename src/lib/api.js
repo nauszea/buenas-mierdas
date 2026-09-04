@@ -104,7 +104,11 @@ function desdeRegistro(r) {
 // ---------------------------------------------------------------------------
 
 export async function cargarAfectos() {
-  const semillas = AFECTOS.map((a) => ({ ...a, reapropiaciones: 0 }))
+  // respeta el `reapropiaciones` que ya traiga el afecto semilla en vez de
+  // forzarlo siempre a 0 — así se puede dejar un objeto de prueba a un
+  // clic de consagrarse (ver tamagotchi en afectos.js), sin tener que
+  // clicar Reapropiar decenas de veces cada vez que se recarga la página
+  const semillas = AFECTOS.map((a) => ({ ...a, reapropiaciones: a.reapropiaciones ?? 0 }))
   if (await hayBackend()) {
     const registros = await pb.collection('afectos').getFullList({ sort: 'created' })
     const todos = [...semillas, ...registros.map(desdeRegistro)]

@@ -233,10 +233,22 @@ export default function Afecto({
   // ángulo de su giro constante estaba flotando un segundo antes. Sigue
   // girando después con toda normalidad — eso no se toca.
   const giroDeriva = useRef(0)
+  // el ángulo que hace falta para que el afecto quede mirando hacia donde
+  // sea que la cámara esté llegando — sin esto, "de frente" solo se
+  // cumplía si siempre te acercabas desde la MISMA dirección: `rotacion`
+  // fija en el espacio del mundo se ve de frente desde un lado y de
+  // costado desde otro. Se calcula UNA vez, en el instante exacto de
+  // seleccionar (no cuadro a cuadro — si no, giraría sin parar mientras
+  // orbitas alrededor para mirarlo, un efecto raro). `necesitaOrientar`
+  // avisa a useFrame que tiene que calcularlo en el próximo cuadro, ya
+  // que acá no hay una posición de cámara sincronizada a mano.
+  const anguloHaciaCamara = useRef(0)
+  const necesitaOrientar = useRef(false)
   useEffect(() => {
     if (seleccionado) {
       vuelta.current = { activa: true, inicio: performance.now() }
       giroDeriva.current = 0
+      necesitaOrientar.current = true
     }
   }, [seleccionado])
 
@@ -275,9 +287,31 @@ export default function Afecto({
 
     // los consagrados son anclas del cielo: quietos para siempre
     if (grupo.current) {
+      // recién ACÁ se conoce la posición real del grupo este cuadro, así
+      // que el cálculo de "hacia dónde mirar" se resuelve en cuanto se
+      // pide (una sola vez por selección, no todos los cuadros)
+      if (necesitaOrientar.current) {
+        const dx = camera.position.x - grupo.current.position.x
+        const dz = camera.position.z - grupo.current.position.z
+        anguloHaciaCamara.current = Math.atan2(dx, dz)
+        necesitaOrientar.current = false
+      }
+
+      // mientras está seleccionado, el afecto queda mirando hacia donde
+      // sea que llegó la cámara (congelado, no persigue el orbit en
+      // vivo) — así "de frente" se cumple sin importar desde qué
+      // dirección te acercaste. Al deseleccionar, retoma su giro de
+      // deriva normal desde cero.
+      let baseGiro = 0
+      if (seleccionado) {
+        baseGiro = anguloHaciaCamara.current
+      } else if (!consagrado) {
+        giroDeriva.current += deriva.velGiro * delta
+        baseGiro = giroDeriva.current
+      }
+
       if (consagrado) {
         grupo.current.position.set(...afecto.posicion)
-        grupo.current.rotation.y = rotacionBase + giroSeleccion
       } else {
         const t = clock.elapsedTime
         const angulo = deriva.fase + t * deriva.velOrbita
@@ -286,14 +320,8 @@ export default function Afecto({
           afecto.posicion[1] + Math.sin(t * deriva.velRespira + deriva.fase) * 0.7,
           afecto.posicion[2] + Math.sin(angulo) * deriva.radio,
         )
-        // mientras está seleccionado, el giro de deriva queda CONGELADO en
-        // 0 — si siguiera sumando de fondo, para cuando termina la
-        // vueltita y de verdad lo estás mirando ya se corrió unos grados
-        // del ángulo "de frente" (rotacionBase), aunque sea poco. Recién
-        // al cerrar la ficha (deseleccionar) retoma el giro, desde cero.
-        if (!seleccionado) giroDeriva.current += deriva.velGiro * delta
-        grupo.current.rotation.y = giroDeriva.current + rotacionBase + giroSeleccion
       }
+      grupo.current.rotation.y = baseGiro + rotacionBase + giroSeleccion
     }
 
     // dos distancias, dos propósitos: `cargarGlb` es holgada (rendimiento,

@@ -127,6 +127,10 @@ export const AFECTOS = [
     glb: '/modelos/tamagotchi.glb',
     escala: 1,
     rotacion: 0,
+    // DE PRUEBA — a un clic de consagrarse (umbral hoy en 20, ver
+    // consagracion.js), para poder ver la consagración sin reapropiar 19
+    // veces primero. Bórralo (o vuelve a 0) cuando ya no lo necesites.
+    reapropiaciones: 19,
     forma: 'esfera',
     color: '#ffe9a8',
   },
