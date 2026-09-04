@@ -135,7 +135,14 @@ function ModeloGLB({ url, escala = 1, desgaste = 0, consagrado = false, hover = 
 
   useFrame(() => {
     const destello = pulso ? Math.max(0, 1.6 - (performance.now() - pulso) / 300) : 0
-    const base = consagrado ? 0.5 : hover ? 0.35 : 0.08
+    // consagrado bajó de 0.5 a 0.18 (2026-09-04): a 0.5, con el emissive
+    // casi blanco de COLOR_CONSAGRADO, la propia superficie del objeto se
+    // quemaba a blanco parejo — se perdía el sombreado que revela sus
+    // facetas, así que ya no se notaba ninguna forma, solo un bulto
+    // brillante. A 0.18 el objeto se ve tibiamente iluminado, pero
+    // conserva su volumen — el brillo fuerte ahora es tarea del halo de
+    // atrás (el <sprite>), no de la superficie misma.
+    const base = consagrado ? 0.18 : hover ? 0.35 : 0.08
     materiales.forEach(({ mat, colorBase }) => {
       mat.emissiveIntensity = THREE.MathUtils.lerp(mat.emissiveIntensity, base + destello, 0.18)
       mat.emissive.copy(consagrado ? COLOR_CONSAGRADO : colorBase)
@@ -237,11 +244,22 @@ export default function Afecto({
   // sea que la cámara esté llegando — sin esto, "de frente" solo se
   // cumplía si siempre te acercabas desde la MISMA dirección: `rotacion`
   // fija en el espacio del mundo se ve de frente desde un lado y de
-  // costado desde otro. Se calcula UNA vez, en el instante exacto de
-  // seleccionar (no cuadro a cuadro — si no, giraría sin parar mientras
-  // orbitas alrededor para mirarlo, un efecto raro). `necesitaOrientar`
-  // avisa a useFrame que tiene que calcularlo en el próximo cuadro, ya
-  // que acá no hay una posición de cámara sincronizada a mano.
+  // costado desde otro.
+  //
+  // ENCONTRADO (2026-09-04) por qué seguía quedando "levemente" girado:
+  // esto se calculaba UNA sola vez, en el instante exacto en que
+  // `seleccionado` pasa a true — pero al volar desde lejos (buscador, o
+  // clic en un afecto lejano), `seleccionado` y `destino` se activan
+  // JUNTOS, en el mismo instante en que el vuelo recién EMPIEZA. Por eso
+  // el ángulo se calculaba con la cámara todavía en su posición de
+  // ORIGEN, no en la de llegada — quedaba "cerca" (el vuelo es más o
+  // menos una línea recta) pero nunca exacto. Ahora se recalcula todos
+  // los cuadros MIENTRAS está seleccionado, con un giro suave (lerp)
+  // hacia el ángulo real — así se sigue corrigiendo solo durante todo el
+  // vuelo y el acomodo final de la cámara, sin importar cuándo terminan
+  // de moverse. `necesitaOrientar` solo controla el primer cuadro: ahí
+  // se salta derecho al ángulo correcto (sin animar) para no sumarle una
+  // vuelta extra rara a la vueltita, que ya gira bastante por su cuenta.
   const anguloHaciaCamara = useRef(0)
   const necesitaOrientar = useRef(false)
   useEffect(() => {
@@ -287,21 +305,29 @@ export default function Afecto({
 
     // los consagrados son anclas del cielo: quietos para siempre
     if (grupo.current) {
-      // recién ACÁ se conoce la posición real del grupo este cuadro, así
-      // que el cálculo de "hacia dónde mirar" se resuelve en cuanto se
-      // pide (una sola vez por selección, no todos los cuadros)
-      if (necesitaOrientar.current) {
+      // mientras está seleccionado, el afecto persigue con un giro suave
+      // hacia dondequiera que esté la cámara ESTE cuadro — así se sigue
+      // corrigiendo solo durante todo el vuelo de llegada y el acomodo
+      // final (ver la nota grande más arriba de por qué un cálculo único
+      // no alcanzaba). El primer cuadro de cada selección salta derecho
+      // al ángulo correcto, sin animar, para no pelearse con la vueltita.
+      if (seleccionado) {
         const dx = camera.position.x - grupo.current.position.x
         const dz = camera.position.z - grupo.current.position.z
-        anguloHaciaCamara.current = Math.atan2(dx, dz)
-        necesitaOrientar.current = false
+        const anguloObjetivo = Math.atan2(dx, dz)
+        if (necesitaOrientar.current) {
+          anguloHaciaCamara.current = anguloObjetivo
+          necesitaOrientar.current = false
+        } else {
+          // diferencia normalizada a [-π, π] — sin esto, cruzar el punto
+          // donde atan2 salta de +π a -π haría girar por el camino largo
+          let diferencia = anguloObjetivo - anguloHaciaCamara.current
+          diferencia = ((diferencia + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI
+          anguloHaciaCamara.current += diferencia * 0.06
+        }
       }
 
-      // mientras está seleccionado, el afecto queda mirando hacia donde
-      // sea que llegó la cámara (congelado, no persigue el orbit en
-      // vivo) — así "de frente" se cumple sin importar desde qué
-      // dirección te acercaste. Al deseleccionar, retoma su giro de
-      // deriva normal desde cero.
+      // al deseleccionar, retoma su giro de deriva normal desde cero
       let baseGiro = 0
       if (seleccionado) {
         baseGiro = anguloHaciaCamara.current
@@ -336,7 +362,14 @@ export default function Afecto({
     }
     if (material.current) {
       const destello = pulso ? Math.max(0, 1.6 - (performance.now() - pulso) / 300) : 0
-      const base = consagrado ? 0.5 : hover ? 0.35 : 0.08
+      // consagrado bajó de 0.5 a 0.18 (2026-09-04): a 0.5, con el emissive
+    // casi blanco de COLOR_CONSAGRADO, la propia superficie del objeto se
+    // quemaba a blanco parejo — se perdía el sombreado que revela sus
+    // facetas, así que ya no se notaba ninguna forma, solo un bulto
+    // brillante. A 0.18 el objeto se ve tibiamente iluminado, pero
+    // conserva su volumen — el brillo fuerte ahora es tarea del halo de
+    // atrás (el <sprite>), no de la superficie misma.
+    const base = consagrado ? 0.18 : hover ? 0.35 : 0.08
       material.current.emissiveIntensity = THREE.MathUtils.lerp(
         material.current.emissiveIntensity, base + destello, 0.18,
       )
@@ -436,11 +469,17 @@ export default function Afecto({
           se dibuje después (el objeto, con su profundidad normal, la
           tapa donde corresponde). */}
       {consagrado && (
-        <sprite scale={[5, 5, 1]} renderOrder={-1}>
+        // escala y opacidad bajadas (2026-09-04): a 5/0.5 el halo era más
+        // grande que el propio objeto y, sumado al brillo de la superficie
+        // (ver `base` arriba), no dejaba distinguir dónde terminaba el
+        // halo y empezaba la figura. Más chico y más tenue, se lee como un
+        // resplandor DETRÁS del objeto en vez de tragárselo — ajustable
+        // acá mismo si sigue sin sentirse bien.
+        <sprite scale={[3, 3, 1]} renderOrder={-1}>
           <spriteMaterial
             map={texturaAura()}
             transparent
-            opacity={0.5}
+            opacity={0.32}
             depthWrite={false}
             depthTest={false}
             blending={THREE.AdditiveBlending}
