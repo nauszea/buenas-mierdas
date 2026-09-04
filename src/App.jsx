@@ -17,8 +17,11 @@ import Buscador from './ui/Buscador.jsx'
 import FormularioSubida from './ui/FormularioSubida.jsx'
 import InstruccionesEscaneo from './ui/InstruccionesEscaneo.jsx'
 import Confirmacion from './ui/Confirmacion.jsx'
+import VentanaReapropiacion from './ui/VentanaReapropiacion.jsx'
+import Creditos from './ui/Creditos.jsx'
 import { cargarAfectos, registrarReapropiacion } from './lib/api.js'
 import { marcarReapropiado } from './lib/reapropiacionLocal.js'
+import { UMBRAL_CONSAGRACION } from './lib/consagracion.js'
 import { IdiomaContext, TEXTOS } from './lib/idioma.js'
 
 export default function App() {
@@ -55,6 +58,18 @@ export default function App() {
   const [reapropiaciones, setReapropiaciones] = useState({})
   const [pulsos, setPulsos] = useState({})
   const [musicaSonando, setMusicaSonando] = useState(false)
+  // el afecto que está en pleno ritual de reapropiación (ver
+  // VentanaReapropiacion) — null cuando no hay ninguno abierto. Aparte de
+  // `seleccionado`: uno es la ficha siempre visible, este es la ventana
+  // modal que se abre AL RATO, cuando se acepta reapropiar de verdad.
+  const [reapropiando, setReapropiando] = useState(null)
+  const [creditosAbierto, setCreditosAbierto] = useState(false)
+  // el <canvas> real de Three.js, para poder capturarlo como imagen (la
+  // "copia de artista" que se descarga desde VentanaReapropiacion) — hay
+  // que pedirle a <Canvas> que lo entregue con onCreated, no hay forma de
+  // agarrarlo con un ref normal porque R3F no expone el DOM del canvas
+  // como hijo de React.
+  const canvasRef = useRef(null)
 
   // dónde vive de verdad la UI 2D en el DOM — se lo pasamos a cada <Html>
   // de la ficha anclada (ver Afecto.jsx) como su `portal`, así esa ficha
@@ -80,6 +95,8 @@ export default function App() {
   const [zPantalla, setZPantalla] = useState(21)
   const [zBuscador, setZBuscador] = useState(21)
   const [zFicha, setZFicha] = useState(21)
+  const [zReapropiacion, setZReapropiacion] = useState(21)
+  const [zCreditos, setZCreditos] = useState(21)
   useEffect(() => {
     if (pantalla && pantalla !== 'carga') setZPantalla(++zTope.current)
   }, [pantalla])
@@ -89,6 +106,12 @@ export default function App() {
   useEffect(() => {
     if (seleccionado) setZFicha(++zTope.current)
   }, [seleccionado])
+  useEffect(() => {
+    if (reapropiando) setZReapropiacion(++zTope.current)
+  }, [reapropiando])
+  useEffect(() => {
+    if (creditosAbierto) setZCreditos(++zTope.current)
+  }, [creditosAbierto])
 
   // el manifiesto lleva a la guía de controles SOLO la primera vez (el
   // recorrido de bienvenida: manifiesto → tutorial → altar). Reabrirlo
@@ -102,8 +125,10 @@ export default function App() {
   // cualquier ventana emergente sobre el altar libre (buscador, o cualquier
   // pantalla que no sea el altar mismo ni la carga). La ficha de un afecto
   // seleccionado NO cuenta: es un panel fijo a un costado (ver
-  // VistaDetalle) y nunca desenfoca el fondo.
-  const ventanaAbierta = buscadorAbierto || (pantalla !== null && pantalla !== 'carga')
+  // VistaDetalle) y nunca desenfoca el fondo. El ritual de reapropiación y
+  // los créditos SÍ cuentan — son momentos que piden toda la atención.
+  const ventanaAbierta =
+    buscadorAbierto || !!reapropiando || creditosAbierto || (pantalla !== null && pantalla !== 'carga')
   // desenfoque: fuerte en la carga, más suave detrás de cualquier ventana,
   // nada en el altar libre sin nada abierto
   const blurPx = pantalla === 'carga' ? 6 : ventanaAbierta ? 3 : 0
@@ -198,7 +223,7 @@ export default function App() {
     registrarReapropiacion(afecto, cuentaNueva) // persiste sin bloquear la UI
     marcarReapropiado(afecto.id) // freno suave: esta persona ya no puede repetir en este afecto
     // el acorde triunfal suena UNA sola vez, justo al cruzar a consagrado
-    if (cuentaAnterior < 100 && cuentaNueva >= 100) sonidoConsagrar()
+    if (cuentaAnterior < UMBRAL_CONSAGRACION && cuentaNueva >= UMBRAL_CONSAGRACION) sonidoConsagrar()
     else sonidoReapropiar()
   }
 
@@ -216,7 +241,14 @@ export default function App() {
         <Canvas
           dpr={[1, 1.5]}
           camera={{ position: [0, 3, 14], fov: 55, near: 0.1, far: 400 }}
-          gl={{ antialias: false }}
+          // preserveDrawingBuffer: sin esto, toDataURL() del canvas devuelve
+          // una imagen en blanco casi siempre — WebGL por defecto BORRA su
+          // propio buffer apenas termina de dibujar cada cuadro (para no
+          // gastar memoria de más), así que para el momento en que el
+          // código pide capturarlo ya no queda nada que leer. Con esto
+          // activado, el cuadro se queda disponible un instante más.
+          gl={{ antialias: false, preserveDrawingBuffer: true }}
+          onCreated={({ gl }) => { canvasRef.current = gl.domElement }}
           onPointerMissed={() => { setSeleccionado(null); setObjetoLejanoHover(null) }}
         >
           <fog attach="fog" args={[COLORES.horizonte, 15, 120]} />
@@ -246,7 +278,7 @@ export default function App() {
               onSeleccionar={seleccionarAfecto}
               onVolarLejano={volarLejano}
               onCerrarSeleccion={() => { setSeleccionado(null); setObjetoLejanoHover(null) }}
-              onReapropiar={reapropiar}
+              onAbrirReapropiacion={setReapropiando}
               onHoverLejos={reportarHoverLejos}
               posSeguirRef={posSeguirRef}
               posicionesRef={posicionesRef}
@@ -315,6 +347,13 @@ export default function App() {
 
               <button className="boton-retro boton-subir" onClick={() => setPantalla('subir')}>
                 {t.botonSubir}
+              </button>
+
+              {/* chico, discreto, casi invisible hasta que le pasas el
+                  mouse — el gesto escondido del archivo, no algo que
+                  compita por atención con el resto de la interfaz */}
+              <button className="boton-retro boton-creditos" onClick={() => setCreditosAbierto(true)}>
+                {t.botonCreditos}
               </button>
 
               {/* solo en el altar libre de verdad — nada abierto encima, ni
@@ -393,6 +432,21 @@ export default function App() {
               onCerrar={() => setBuscadorAbierto(false)}
               zIndex={zBuscador}
             />
+          )}
+
+          {reapropiando && (
+            <VentanaReapropiacion
+              afecto={reapropiando}
+              reapropiaciones={reapropiaciones[reapropiando.id] || 0}
+              onAceptar={() => reapropiar(reapropiando)}
+              onCerrar={() => setReapropiando(null)}
+              zIndex={zReapropiacion}
+              canvasRef={canvasRef}
+            />
+          )}
+
+          {creditosAbierto && (
+            <Creditos onCerrar={() => setCreditosAbierto(false)} zIndex={zCreditos} />
           )}
         </div>
       </div>

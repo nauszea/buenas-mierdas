@@ -94,6 +94,7 @@ function desdeRegistro(r) {
     glb: r.modelo ? pb.files.getUrl(r, r.modelo) : undefined,
     reapropiaciones: r.reapropiaciones || 0,
     avisoEmail: r.avisoEmail || '',
+    rotacion: r.rotacion || 0,
     esBackend: true,
   }
 }
@@ -127,6 +128,10 @@ export async function subirAfecto({ nombre, ubicacion, historia, tags, archivo, 
     forma: alAzar(FORMAS),
     reapropiaciones: 0,
     avisoEmail,
+    // arranca en 0 (de frente "por defecto") — la fundadora lo ajusta a
+    // ojo desde el panel de Pocketbase una vez que ve el modelo real,
+    // como parte de la misma revisión manual donde ya procesa cada .glb
+    rotacion: 0,
   }
   totalAfectos = (totalAfectos ?? 0) + 1 // el siguiente afecto ya empieza un poco más lejos
 
@@ -141,6 +146,7 @@ export async function subirAfecto({ nombre, ubicacion, historia, tags, archivo, 
     fd.append('forma', base.forma)
     fd.append('reapropiaciones', '0')
     fd.append('avisoEmail', base.avisoEmail)
+    fd.append('rotacion', '0')
     if (archivo) fd.append('modelo', archivo)
     const registro = await pb.collection('afectos').create(fd)
     return desdeRegistro(registro)

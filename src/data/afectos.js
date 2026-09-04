@@ -107,6 +107,10 @@ export const AFECTOS = [
     posicion: [-39, 8, 31],
     glb: '/modelos/palta.glb',
     escala: 1,
+    // grados sobre el eje Y para que el modelo quede DE FRENTE en vez de
+    // de espaldas/costado — cada .glb trae su propio "frente" según cómo
+    // se escaneó, así que esto se ajusta a ojo, uno por uno (ver Afecto.jsx)
+    rotacion: 0,
     forma: 'esfera',
     color: '#b8e6c9',
   },
@@ -122,6 +126,7 @@ export const AFECTOS = [
     posicion: [20, 14, -22],
     glb: '/modelos/tamagotchi.glb',
     escala: 1,
+    rotacion: 180,
     forma: 'esfera',
     color: '#ffe9a8',
   },

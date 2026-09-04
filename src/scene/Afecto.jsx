@@ -6,6 +6,7 @@ import { texturaDesgaste } from './desgaste.js'
 import { texturaAura } from './aura.js'
 import VistaDetalle from '../ui/VistaDetalle.jsx'
 import EtiquetaAfecto from '../ui/EtiquetaAfecto.jsx'
+import { UMBRAL_CONSAGRACION } from '../lib/consagracion.js'
 
 const COLOR_CONSAGRADO = new THREE.Color('#fff6b8')
 
@@ -157,7 +158,7 @@ export default function Afecto({
   onSeleccionar,
   onVolarLejano,
   onCerrarSeleccion,
-  onReapropiar,
+  onAbrirReapropiacion,
   onHoverLejos,
   posSeguirRef,
   posicionesRef,
@@ -171,9 +172,9 @@ export default function Afecto({
   const [cerca, setCerca] = useState(false)
   const cuadro = useRef(0)
 
-  const consagrado = reapropiaciones >= 100
-  // cuánta grieta/mugre se ve: crece clic a clic hasta 100
-  const desgaste = Math.min(reapropiaciones / 100, 1)
+  const consagrado = reapropiaciones >= UMBRAL_CONSAGRACION
+  // cuánta grieta/mugre se ve: crece clic a clic hasta el umbral
+  const desgaste = Math.min(reapropiaciones / UMBRAL_CONSAGRACION, 1)
 
   // Mientras el mouse está encima de un afecto LEJANO, avisamos a App.jsx
   // para que muestre abajo el cartel "clic para volar hacia él". Es un
@@ -225,11 +226,42 @@ export default function Afecto({
   // reemplaza — por eso vive aparte y no dentro de `deriva`.
   const DURACION_VUELTA_MS = 600
   const vuelta = useRef({ activa: false, inicio: 0 })
+  // cuánto ha girado por deriva desde la ÚLTIMA vez que se seleccionó (no
+  // desde que arrancó la app) — se resetea a 0 cada vez que se selecciona,
+  // así que justo al llegar (clic o vuelo desde lejos) el afecto SIEMPRE
+  // queda mirando hacia `rotacionBase` (de frente), sin importar en qué
+  // ángulo de su giro constante estaba flotando un segundo antes. Sigue
+  // girando después con toda normalidad — eso no se toca.
+  const giroDeriva = useRef(0)
   useEffect(() => {
-    if (seleccionado) vuelta.current = { activa: true, inicio: performance.now() }
+    if (seleccionado) {
+      vuelta.current = { activa: true, inicio: performance.now() }
+      giroDeriva.current = 0
+    }
   }, [seleccionado])
 
-  useFrame(({ camera, clock }) => {
+  // la misma vueltita, reusada como el "movimiento" del objeto al
+  // reapropiarse (ver ventana de reapropiación) — `pulso` ya cambia en
+  // cada reapropiación (lo usa el destello de brillo, ver más abajo), así
+  // que alcanza con escucharlo también acá. A propósito NO resetea
+  // `giroDeriva`: reapropiar no es "llegar de nuevo", así que el objeto
+  // sigue girando desde donde iba, solo con un giro extra encima.
+  useEffect(() => {
+    if (pulso) vuelta.current = { activa: true, inicio: performance.now() }
+  }, [pulso])
+
+  // rotación de "frente" propia de cada afecto — cada .glb escaneado trae
+  // su propio "hacia dónde mira" según cómo lo giraron al escanearlo, así
+  // que no hay forma automática de adivinarlo. `afecto.rotacion` (en
+  // grados) es el ajuste manual, uno por afecto, para que quede de frente
+  // por defecto — se SUMA al resto de la rotación (deriva + vueltita),
+  // nunca la reemplaza.
+  const rotacionBase = useMemo(
+    () => THREE.MathUtils.degToRad(afecto.rotacion || 0),
+    [afecto.rotacion],
+  )
+
+  useFrame(({ camera, clock }, delta) => {
     cuadro.current += 1
 
     // cuánto falta del giro de selección, con ease-out cúbico (rápido al
@@ -245,7 +277,7 @@ export default function Afecto({
     if (grupo.current) {
       if (consagrado) {
         grupo.current.position.set(...afecto.posicion)
-        grupo.current.rotation.y = giroSeleccion
+        grupo.current.rotation.y = rotacionBase + giroSeleccion
       } else {
         const t = clock.elapsedTime
         const angulo = deriva.fase + t * deriva.velOrbita
@@ -254,7 +286,8 @@ export default function Afecto({
           afecto.posicion[1] + Math.sin(t * deriva.velRespira + deriva.fase) * 0.7,
           afecto.posicion[2] + Math.sin(angulo) * deriva.radio,
         )
-        grupo.current.rotation.y = t * deriva.velGiro + giroSeleccion
+        giroDeriva.current += deriva.velGiro * delta
+        grupo.current.rotation.y = giroDeriva.current + rotacionBase + giroSeleccion
       }
     }
 
@@ -410,7 +443,7 @@ export default function Afecto({
           <VistaDetalle
             afecto={afecto}
             reapropiaciones={reapropiaciones}
-            onReapropiar={() => onReapropiar(afecto)}
+            onAbrirReapropiacion={() => onAbrirReapropiacion(afecto)}
             onCerrar={onCerrarSeleccion}
             zIndex={zIndexFicha}
           />

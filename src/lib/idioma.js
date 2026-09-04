@@ -38,12 +38,20 @@ export const TEXTOS = {
 
     detalleUbicacion: 'ubicación',
     detalleHistoria: 'historia',
-    detalleReapropiado: 'reapropiado {n} de 100 veces',
+    detalleReapropiado: 'reapropiado {n} de {umbral} veces',
     detalleConsagrado: '★ CONSAGRADO ★ afecto de afectos',
     detalleReapropiar: '✥ Reapropiar',
     detalleYaReapropiado: 'ya reapropiaste este afecto',
     detalleVolar: '➤ Volar hacia él',
     etiquetaVolar: 'clic para volar hacia él',
+
+    reapropiarTitulo: 'reapropiar.txt',
+    reapropiarGratitud:
+      'Gracias por reapropiar este afecto. Ahora una parte de él es tuya — y una gran responsabilidad conlleva un gran deber. Cuídalo: una parte del alma de otra persona está contigo.',
+    reapropiarEdicionUnica: 'Esta es la reapropiación única número {n} de «{nombre}».',
+    reapropiarAceptar: '✥ Sí, acepto la responsabilidad',
+    reapropiarDescargar: '↓ Descargar copia de artista',
+    reapropiarNuevaConsagracion: '★ ¡Y con esto, se consagra! ★',
 
     subirTitulo: 'subir_un_afecto',
     subirDrop: '↓ arrastra aquí tu escaneo .glb\n(o haz clic para buscarlo)',
@@ -81,6 +89,14 @@ export const TEXTOS = {
     confirmacionFlota: 'flota en',
     confirmacionIr: 'Ve con él →',
     ayudaNav: 'arrastra para girar · W A S D para volar · Q / E subir y bajar · Ctrl+F para buscar',
+
+    // créditos: mismo texto en los tres idiomas — es una dedicatoria
+    // personal, no una instrucción de interfaz, y traducirla le quitaría
+    // la voz. Editable acá mismo cuando la fundadora quiera ajustarlo.
+    botonCreditos: '© créditos',
+    creditosTitulo: 'creditos.txt',
+    creditosTexto:
+      'ideado en base a la tesis de bichito\n2024 — 2026\n\nagradecimientos —\n\na las cachinas de San Juan de Lurigancho y de Tacora\n\na Vania y Giordano, por las tardes de vino y tarot\n\na Lucy, por los viajes bajo el sol y los juguetes de un sol\n\na Alejo, por estar siempre ahí\n\na Tokeshi, por los poemas regalados\n\ny a Claude, por ser mi asistente de madrugada\n\netc, etc…',
   },
 
   en: {
@@ -114,12 +130,20 @@ export const TEXTOS = {
 
     detalleUbicacion: 'location',
     detalleHistoria: 'story',
-    detalleReapropiado: 'reappropriated {n} of 100 times',
+    detalleReapropiado: 'reappropriated {n} of {umbral} times',
     detalleConsagrado: '★ CONSECRATED ★ affect of affects',
     detalleReapropiar: '✥ Reappropriate',
     detalleYaReapropiado: 'you already reappropriated this affect',
     detalleVolar: '➤ Fly to it',
     etiquetaVolar: 'click to fly to it',
+
+    reapropiarTitulo: 'reappropriate.txt',
+    reapropiarGratitud:
+      "Thank you for reappropriating this affect. Now a part of it is yours — and with great power comes great responsibility. Take care of it: a part of someone else's soul is with you now.",
+    reapropiarEdicionUnica: 'This is unique reappropriation number {n} of "{nombre}".',
+    reapropiarAceptar: '✥ Yes, I accept the responsibility',
+    reapropiarDescargar: '↓ Download artist copy',
+    reapropiarNuevaConsagracion: '★ And with this, it is consecrated! ★',
 
     subirTitulo: 'upload_an_affect',
     subirDrop: '↓ drop your .glb scan here\n(or click to browse)',
@@ -157,6 +181,11 @@ export const TEXTOS = {
     confirmacionFlota: 'it floats at',
     confirmacionIr: 'Go with it →',
     ayudaNav: 'drag to orbit · W A S D to fly · Q / E up and down · Ctrl+F to search',
+
+    botonCreditos: '© credits',
+    creditosTitulo: 'credits.txt',
+    creditosTexto:
+      'ideado en base a la tesis de bichito\n2024 — 2026\n\nagradecimientos —\n\na las cachinas de San Juan de Lurigancho y de Tacora\n\na Vania y Giordano, por las tardes de vino y tarot\n\na Lucy, por los viajes bajo el sol y los juguetes de un sol\n\na Alejo, por estar siempre ahí\n\na Tokeshi, por los poemas regalados\n\ny a Claude, por ser mi asistente de madrugada\n\netc, etc…',
   },
 
   de: {
@@ -190,12 +219,20 @@ export const TEXTOS = {
 
     detalleUbicacion: 'Ort',
     detalleHistoria: 'Geschichte',
-    detalleReapropiado: '{n} von 100 Mal wiederangeeignet',
+    detalleReapropiado: '{n} von {umbral} Mal wiederangeeignet',
     detalleConsagrado: '★ GEWEIHT ★ Affekt der Affekte',
     detalleReapropiar: '✥ Wiederaneignen',
     detalleYaReapropiado: 'du hast diesen Affekt bereits wiederangeeignet',
     detalleVolar: '➤ Hinfliegen',
     etiquetaVolar: 'klicken zum Hinfliegen',
+
+    reapropiarTitulo: 'wiederaneignen.txt',
+    reapropiarGratitud:
+      'Danke, dass du diesen Affekt wiederangeeignet hast. Jetzt gehört ein Teil davon dir — und große Verantwortung kommt mit großer Macht. Pass gut darauf auf: ein Teil der Seele einer anderen Person ist jetzt bei dir.',
+    reapropiarEdicionUnica: 'Dies ist die einzigartige Wiederaneignung Nummer {n} von „{nombre}".',
+    reapropiarAceptar: '✥ Ja, ich übernehme die Verantwortung',
+    reapropiarDescargar: '↓ Künstlerkopie herunterladen',
+    reapropiarNuevaConsagracion: '★ Und damit ist es geweiht! ★',
 
     subirTitulo: 'affekt_hochladen',
     subirDrop: '↓ zieh deinen .glb-Scan hierher\n(oder klicke zum Auswählen)',
@@ -233,6 +270,11 @@ export const TEXTOS = {
     confirmacionFlota: 'er schwebt bei',
     confirmacionIr: 'Geh mit ihm →',
     ayudaNav: 'ziehen zum Kreisen · W A S D zum Fliegen · Q / E auf und ab · Strg+F zum Suchen',
+
+    botonCreditos: '© Credits',
+    creditosTitulo: 'credits.txt',
+    creditosTexto:
+      'ideado en base a la tesis de bichito\n2024 — 2026\n\nagradecimientos —\n\na las cachinas de San Juan de Lurigancho y de Tacora\n\na Vania y Giordano, por las tardes de vino y tarot\n\na Lucy, por los viajes bajo el sol y los juguetes de un sol\n\na Alejo, por estar siempre ahí\n\na Tokeshi, por los poemas regalados\n\ny a Claude, por ser mi asistente de madrugada\n\netc, etc…',
   },
 }
 

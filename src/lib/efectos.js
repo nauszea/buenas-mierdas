@@ -72,6 +72,26 @@ export function sonidoReapropiar() {
   })
 }
 
+// la musiquita de los créditos — un "ganaste el juego" de verdad, no solo
+// un acorde corto como sonidoConsagrar: una escalerita que sube, un
+// respiro, y un remate más alto que se queda sonando. Distinta a propósito
+// de las demás — esta es la única que se oye una sola vez en toda la app,
+// al abrir los créditos.
+export function sonidoCreditos() {
+  const c = contexto()
+  const ahora = c.currentTime
+  const melodia = [
+    { frecuencia: 523.3, cuando: 0, duracion: 0.12 }, // C5
+    { frecuencia: 659.3, cuando: 0.12, duracion: 0.12 }, // E5
+    { frecuencia: 784.0, cuando: 0.24, duracion: 0.12 }, // G5
+    { frecuencia: 1046.5, cuando: 0.36, duracion: 0.22 }, // C6
+    { frecuencia: 784.0, cuando: 0.62, duracion: 0.12 }, // G5 (respiro)
+    { frecuencia: 1046.5, cuando: 0.74, duracion: 0.12 }, // C6
+    { frecuencia: 1318.5, cuando: 0.86, duracion: 0.55 }, // E6 — remate sostenido
+  ]
+  melodia.forEach(({ frecuencia, cuando, duracion }) => nota(c, frecuencia, ahora + cuando, duracion, 0.09))
+}
+
 // el "materializar" de cualquier ventana al abrirse (Fase N64) — a
 // propósito NO es una nota de 'square' como las de arriba: es un barrido
 // de frecuencia muy corto en un oscilador 'sine' (más suave, sin el

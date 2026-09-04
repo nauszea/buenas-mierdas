@@ -3,6 +3,7 @@ import { useTexto, f } from '../lib/idioma.js'
 import { sonidoAparecer } from '../lib/efectos.js'
 import { ANCHO_FICHA_PX, GAP_FICHA_PX } from '../lib/disposicionFicha.js'
 import { yaReapropiado } from '../lib/reapropiacionLocal.js'
+import { UMBRAL_CONSAGRACION } from '../lib/consagracion.js'
 
 // ---------------------------------------------------------------------------
 // VistaDetalle: la ficha de un afecto — YA NO es una ventana centrada.
@@ -26,9 +27,9 @@ import { yaReapropiado } from '../lib/reapropiacionLocal.js'
 // objeto (Fase 4). A las 100, se consagra y ya no puede ser dañado.
 // ---------------------------------------------------------------------------
 
-export default function VistaDetalle({ afecto, reapropiaciones, onReapropiar, onCerrar, zIndex }) {
+export default function VistaDetalle({ afecto, reapropiaciones, onAbrirReapropiacion, onCerrar, zIndex }) {
   const { t } = useTexto()
-  const consagrado = reapropiaciones >= 100
+  const consagrado = reapropiaciones >= UMBRAL_CONSAGRACION
   // freno suave por navegador (ver reapropiacionLocal.js): si esta persona
   // ya reapropió este mismo afecto antes, el botón se apaga y se explica.
   const yaHecho = !consagrado && yaReapropiado(afecto.id)
@@ -60,7 +61,7 @@ export default function VistaDetalle({ afecto, reapropiaciones, onReapropiar, on
             {consagrado ? (
               <span className="consagrado">{t.detalleConsagrado}</span>
             ) : (
-              f(t.detalleReapropiado, { n: reapropiaciones })
+              f(t.detalleReapropiado, { n: reapropiaciones, umbral: UMBRAL_CONSAGRACION })
             )}
           </p>
 
@@ -68,7 +69,7 @@ export default function VistaDetalle({ afecto, reapropiaciones, onReapropiar, on
             {!consagrado && (
               <button
                 className={'boton-retro' + (yaHecho ? ' boton-gris' : '')}
-                onClick={onReapropiar}
+                onClick={onAbrirReapropiacion}
                 disabled={yaHecho}
               >
                 {t.detalleReapropiar}
