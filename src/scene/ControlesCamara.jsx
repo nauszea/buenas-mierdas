@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { useEffect, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
-import { ANCHO_FICHA_PX, GAP_FICHA_PX } from '../lib/disposicionFicha.js'
+import { ANCHO_FICHA_PX, GAP_FICHA_PX, CORRECCION_PX } from '../lib/disposicionFicha.js'
 
 // ---------------------------------------------------------------------------
 // ControlesCamara: navegación 3D completa.
@@ -59,7 +59,7 @@ function conEspacioParaFicha(camera, size, base) {
   const fovHorizontalRad = 2 * Math.atan(Math.tan(fovVerticalRad / 2) * (size.width / size.height))
   const anchoMundoVisible = 2 * distancia * Math.tan(fovHorizontalRad / 2)
   const unidadesPorPixel = anchoMundoVisible / size.width
-  const pixelesAOcupar = (GAP_FICHA_PX + ANCHO_FICHA_PX) / 2
+  const pixelesAOcupar = (GAP_FICHA_PX + ANCHO_FICHA_PX) / 2 - CORRECCION_PX
   const desplazamiento = pixelesAOcupar * unidadesPorPixel
 
   return base.clone().add(derecha.multiplyScalar(desplazamiento))
@@ -210,8 +210,12 @@ export default function ControlesCamara({ destino, onFinDeVuelo, mirarHacia, pos
       dampingFactor={0.06}
       enablePan
       screenSpacePanning
-      minDistance={2}
-      maxDistance={90}
+      // minDistance más chico: poder acercarte de verdad a ver el detalle
+      // que se va formando con las reapropiaciones (grietas, brillitos).
+      // maxDistance más grande: más margen para alejarte a medida que el
+      // archivo crece en espiral (ver posicionNueva() en api.js).
+      minDistance={0.8}
+      maxDistance={150}
     />
   )
 }

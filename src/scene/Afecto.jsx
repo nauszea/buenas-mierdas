@@ -82,7 +82,11 @@ function ModeloGLB({ url, escala = 1, desgaste = 0, consagrado = false, hover = 
     // bug real detrás de "la palta y el tamagotchi se ven diminutos": cada
     // .glb volvía a su escala nativa (distinta en cada archivo), sin
     // relación con el resto del altar.
-    clon.scale.setScalar((2.2 / dimensionMayor) * escala)
+    // este número es el tamaño de referencia (en unidades 3D) al que se
+    // normaliza el lado más largo de CUALQUIER .glb subido, antes del
+    // multiplicador `escala` propio de cada afecto — subirlo sube a TODOS
+    // los objetos escaneados un poco, parejo. Prueba pedida: antes era 2.2.
+    clon.scale.setScalar((2.5 / dimensionMayor) * escala)
 
     clon.updateMatrixWorld(true)
     const cajaEscalada = new THREE.Box3().setFromObject(clon)
@@ -213,14 +217,35 @@ export default function Afecto({
     [],
   )
 
+  // la "vueltita": un giro completo, rápido y que se frena solo (ease-out),
+  // justo cuando se selecciona el afecto (clic directo, o al llegar
+  // volando desde lejos) — el gesto de "presentación" estilo selección de
+  // personaje que pidió la fundadora. Se SUMA a la rotación que cada
+  // afecto ya tenga (la deriva lenta, o cero si está consagrado), nunca la
+  // reemplaza — por eso vive aparte y no dentro de `deriva`.
+  const DURACION_VUELTA_MS = 600
+  const vuelta = useRef({ activa: false, inicio: 0 })
+  useEffect(() => {
+    if (seleccionado) vuelta.current = { activa: true, inicio: performance.now() }
+  }, [seleccionado])
+
   useFrame(({ camera, clock }) => {
     cuadro.current += 1
+
+    // cuánto falta del giro de selección, con ease-out cúbico (rápido al
+    // empezar, se asienta suave) — 2π es una vuelta completa
+    let giroSeleccion = 0
+    if (vuelta.current.activa) {
+      const progreso = Math.min(1, (performance.now() - vuelta.current.inicio) / DURACION_VUELTA_MS)
+      giroSeleccion = (1 - Math.pow(1 - progreso, 3)) * Math.PI * 2
+      if (progreso >= 1) vuelta.current.activa = false
+    }
 
     // los consagrados son anclas del cielo: quietos para siempre
     if (grupo.current) {
       if (consagrado) {
         grupo.current.position.set(...afecto.posicion)
-        grupo.current.rotation.y = 0
+        grupo.current.rotation.y = giroSeleccion
       } else {
         const t = clock.elapsedTime
         const angulo = deriva.fase + t * deriva.velOrbita
@@ -229,7 +254,7 @@ export default function Afecto({
           afecto.posicion[1] + Math.sin(t * deriva.velRespira + deriva.fase) * 0.7,
           afecto.posicion[2] + Math.sin(angulo) * deriva.radio,
         )
-        grupo.current.rotation.y = t * deriva.velGiro
+        grupo.current.rotation.y = t * deriva.velGiro + giroSeleccion
       }
     }
 
